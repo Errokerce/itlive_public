@@ -1,0 +1,127 @@
+@charset "utf-8";
+html{
+	background-color: #373737;
+	font-family: "微軟正黑體";
+}
+h1{
+	text-align: center;
+	margin-top: 2em;
+	color: #C0B283;
+	font-size: 36px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 90%;
+  margin-left:auto;
+  margin-right: auto;
+}
+
+th, td {
+  text-align: center;
+  padding: 10px;
+}
+	
+th {
+  background-color: #373737;
+  color: #C0B283;
+  font-size: 20px;
+}
+	
+td{
+  font-size: 18px;
+}
+
+tr:nth-child(even){
+	background-color: #DCD0C0;
+}
+tr:nth-child(odd){
+	background-color: #F4F4F4;
+}
+/*---- input ----*/
+input{
+	width: 70%;
+	border-style: none;
+	border-radius: 0.8em;
+	height: 1.6em;
+	padding-left: 8px;/*游標*/
+}
+/* --- icon ---*/
+i{
+	font-size: 25px;
+}
+
+i:hover{
+	color: #A67F78;
+}			
+
+hr{
+	background-color: #C0B283;
+	border: none;
+	height: 1px;
+	width: 90%;
+}
+
+select{
+	height: 1.8em;
+	border-style: none;
+	border-radius: 0.8em;
+	width: 4rem;
+	padding: 0 0 0 5px;
+}
+
+@media screen and (max-width: 375px){
+	th {
+ 		background-color: #373737;
+  		color: #C0B283;
+  		font-size: 12px;
+	}
+	
+	td{
+  		font-size: 10px;
+	}
+	select{
+		height: 1rem;
+		border-style: none;
+		border-radius: 0.8em;
+		width: 1rem;
+	}
+	i{
+		font-size: 14px;
+	}
+
+	i:hover{
+		color: #A67F78;
+	}
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	

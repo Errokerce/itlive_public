@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>會員資料</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+TC&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link href="css/reProfile.css" rel="stylesheet" type="text/css">
+    <link href="../static/css/reProfile.css" rel="stylesheet" type="text/css">
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+
+
+<h1>會 員 資 料</h1>
+<div id="app">
+    <div class="container">
+        <table class="tableBody">
+            <tr class="tableCell">
+                <td class="cellName">
+                    暱稱
+                </td>
+                <td class="cellInput">
+                    <input class="inputBox" v-model:value="username"></input>
+                </td>
+            </tr>
+            <tr class="tableCell">
+                <td class="cellName">
+                    姓氏
+                </td>
+                <td class="cellInput">
+                    <input class="inputBox" v-model:value="name_last"></input>
+                </td>
+            </tr>
+            <tr class="tableCell">
+                <td class="cellName">
+                    名字
+                </td>
+                <td class="cellInput">
+                    <input class="inputBox" v-model:value="name_first"></input>
+                </td>
+            </tr>
+            <tr class="tableCell">
+                <td class="cellName">
+                    信箱
+                </td>
+                <td class="cellInput">
+                    <input class="inputBox" v-model:value="mail"></input>
+                </td>
+            </tr>
+            <tr class="tableCell">
+                <td class="cellName">
+                    縣市
+                </td>
+                <td class="cellInput">
+                    <select v-model="city" class="cellInput cellSelect">
+                        <option v-for="city in cities" v-bind:value="city">
+                            &{ city }
+                        </option>
+                    </select>
+                </td>
+            </tr>
+            <tr class="tableCell tableCellBottom">
+                <td class="cellName">
+                    地址
+                </td>
+                <td class="cellInput">
+                    <input class="inputBox" v-model:value="address"></input>
+                </td>
+            </tr>
+        </table>
+        <button class="sbtn" @click="sendProfile()"><b>送 出</b></button>
+    </div>	
+</div>
+
+
+
+<script>
+    const service = axios.create()
+
+    const app = new Vue({
+        delimiters: ['&{', '}'],
+        el: '#app',
+        data() {
+            return {
+                username:"",
+                name_first:"",
+                name_last:"",
+                mail:"",
+                city:"",
+                address:"",
+                cities: [
+                    '基隆市',
+                    '台北市',
+                    '新北市',
+                    '桃園縣',
+                    '新竹市',
+                    '新竹縣',
+                    '苗栗縣',
+                    '台中市',
+                    '彰化縣',
+                    '南投縣',
+                    '雲林縣',
+                    '嘉義市',
+                    '嘉義縣',
+                    '台南市',
+                    '高雄市',
+                    '屏東縣',
+                    '台東縣',
+                    '花蓮縣',
+                    '宜蘭縣',
+                    '澎湖縣',
+                    '金門縣',
+                    '連江縣',
+                ],
+            }
+        },
+        watch: {
+            inputPhone(value) {
+                let a = /^09[0-9]{8}$/
+                if (this.step != 2)
+                    this.step = a.test(value) ? 1 : 99
+            }
+        },
+        mounted() {
+            service({
+                    url: 'https://api.itlive.nctu.me/login/profileEdit',
+                    method: 'GET',
+                    withCredentials: true
+                }).then(res => {
+                    var inner = res.data.data
+                    
+                    console.log(inner)
+                    console.log(typeof (inner))
+
+                    this.username=inner.userName
+                    this.name_first=inner.nameFirst
+                    this.name_last=inner.nameLast
+                    this.mail=inner.mail
+                    this.city=inner.city
+                    this.address=inner.address
+                })
+        },
+        methods: {
+            sendProfile(){
+                console.log({
+                        "nick_name":this.username,
+                        "name_first":this.name_first,
+                        "name_last":this.name_last,
+                        "email":this.mail,
+                        "city":this.city,
+                        "address":this.address,
+                    })
+                service({
+                    url: 'https://api.itlive.nctu.me/login/profileEdit',
+                    method: 'POST',
+                    data: {
+                        "nick_name":this.username,
+                        "name_first":this.name_first,
+                        "name_last":this.name_last,
+                        "email":this.mail,
+                        "city":this.city,
+                        "address":this.address,
+                    },
+                    withCredentials: true
+                }).then(resp => {
+                    console.log(resp)
+                    window.location.href="/"
+                })
+            }
+        }
+    })
+</script>
+</body>
+
+
+</html>

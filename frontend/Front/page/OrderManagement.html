@@ -1,0 +1,267 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>訂單管理</title>
+    <link href="static/css/OrderManagement.css" rel="stylesheet" type="text/css">
+
+    <!--------icon bar--------->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+
+<body>
+    <h1>訂單管理</h1>
+    <div id="app">
+        <table>
+            <tr>
+                <th>客戶姓名</th>
+                <th>手機號碼</th>
+                <th>訂單狀態</th>
+                <th>付款狀態</th>
+                <th>運送狀態</th>
+
+            </tr>
+            <tr>
+                <td>
+                    <input class="form-control" v-model="search.searchname" placeholder=""> <!-- 客戶姓名 -->
+                </td>
+                <td>
+                    <input class="form-control" v-model="search.searchphone" placeholder=""> <!-- 手機號碼 -->
+                </td>
+                <td>
+                    <select class="form-control" v-model="search.searchstatus">
+                        <option value="" selected>全部</option>
+                        <option value="處理中">處理中</option>
+                        <option value="已結束">已結束</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-control" v-model="search.searchpaystatus">
+                        <option value="" selected>全部</option>
+                        <option value="尚未付款">尚未付款</option>
+                        <option value="付款完成">付款完成</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-control" v-model="search.searchshipstatus">
+                        <option value="" selected>全部</option>
+                        <option value="尚未出貨">尚未出貨</option>
+                        <option value="已出貨">已出貨</option>
+                        <option value="已送達">已送達</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+
+        <hr>
+
+        <table>
+            <tr>
+                <th>訂單編號</th>
+                <th>姓 名</th>
+                <th>電 話</th>
+                <th>訂單狀態</th>
+                <th>付款狀態</th>
+                <th>運送狀態</th>
+                <th>應付金額</th>
+                <th>成立時間</th>
+                <th>操作</th>
+            </tr>
+            <tr>
+                <td><input class="form-control" v-model="inputOrder.number" placeholder=""></td>
+                <td><input class="form-control" v-model="inputOrder.name" placeholder=""></td>
+                <td><input class="form-control" v-model="inputOrder.phonenumber" placeholder=""></td>
+                <td>
+                    <select class="form-control" v-model="inputOrder.status" placeholder="">
+                        <option value="處理中">處理中</option>
+                        <option value="已結束">已結束</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-control" v-model="inputOrder.paystatus" placeholder="">
+                        <option value="尚未付款">尚未付款</option>
+                        <option value="付款完成">付款完成</option>
+                    </select>
+
+                </td>
+                <td>
+                    <select class="form-control" v-model="inputOrder.shipstatus" placeholder="">
+                        <option value="尚未出貨">尚未出貨</option>
+                        <option value="已出貨">已出貨</option>
+                        <option value="已送達">已送達</option>
+                    </select>
+                </td>
+                <td><input class="form-control" v-model="inputOrder.amount" placeholder=""></td>
+                <td><input class="form-control" v-model="inputOrder.estbTime" placeholder=""></td>
+                <td>
+                    <i class="el-icon-success" @click="check"></i>
+                    <i class="el-icon-error" @click="cancel"></i>
+                </td>
+            </tr>
+        </table>
+
+        <hr>
+
+        <table class="tab2">
+            <tr>
+                <th>訂單編號</th>
+                <th>姓 名</th>
+                <th>電 話</th>
+                <th>訂單狀態</th>
+                <th>付款狀態</th>
+                <th>運送狀態</th>
+                <th>應付金額</th>
+                <th>訂單成立時間</th>
+                <th>操作</th>
+            </tr>
+            <tr v-for="(order,index) in searchlist">
+                <td>&{order.number}</td>
+                <td>&{order.name}</td>
+                <td>&{order.phonenumber}</td>
+                <td>&{order.status}</td>
+                <td>&{order.paystatus}</td>
+                <td>&{order.shipstatus}</td>
+                <td>&{order.amount}</td>
+                <td>&{order.estbTime}</td>
+                <td>
+                    <i class="far fa-edit" @click="editOrder(index)"></i>
+                    <i class="far fa-trash-alt" @click="deleteOrder(index)"></i>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.js"></script>
+    <script>
+        const app = new Vue({
+            delimiters: ['&{', '}'],
+            el: '#app',
+            data() {
+                return {
+                    orders: [],
+                    inputOrder: {
+                        number: '',
+                        name: '',
+                        phonenumber: '',
+                        status: '',
+                        paystatus: '',
+                        shipstatus: '',
+                        amount: '',
+                        estbTime: ''
+                    },
+                    editIndex: null,
+                    search: {
+                        searchname: '',
+                        searchphone: '',
+                        searchstatus: '',
+                        searchpaystatus: '',
+                        searchshipstatus: ''
+                    }
+                }
+            },
+            mounted() {
+                axios({
+                    method: 'get',
+                    url: 'https://api.itlive.nctu.me/GetAllItem',
+                    withCredentials: true
+                }).then(resp=>{
+
+                    this.orders = res.data
+                }).catch((err) => {
+                        console.log(err)
+                })
+            },
+            watch: {
+            },
+            methods: {
+                deleteOrder(index) {
+                    let target = this.orders[index]
+                    if (confirm(`是否刪除訂單編號${target.number}?`)) {
+                        axios.delete('http://localhost:8888/orders/' + target.id)
+                            .then(() => {
+                                this.orders.splice(index, 1)
+                                this.cancel()
+                            }).catch((err) => {
+                                console.log(err)
+                            })
+                    }
+                },
+                check() {
+                    let { number, name, phonenumber, status, paystatus, shipstatus, amount, estbTime } = this.inputOrder
+                    let { id } = this.orders[this.editIndex]
+                    axios.put('http://localhost:8888/orders/' + id, this.inputOrder)
+                        .then((res) => {
+                            this.orders[this.editIndex] = res.data
+                            this.cancel()
+                        }).catch((err) => {
+                            console.log(err)
+                        })
+                },
+                // addOrder() {
+                // 	let {number,name,phonenumber,status,payment,shipment,amount,estbTime} = this.newOrder
+                // 	if(this.newOrder.number.trim().length == 0 || this.newOrder.name.trim().length == 0 || this.newOrder.phonenumber.trim().length == 0 ||this.newOrder.status.trim().length == 0 || this.newOrder.payment.trim().length == 0 || this.newOrder.shipment.trim().length == 0 || this.newOrder.amount.trim().length == 0 ||this.newOrder.estbTime.trim().length == 0){
+                // 		alert('訂單內容一定都要填寫')
+                // 		return
+                // 	}
+
+                // 	axios.post('http://localhost:8888/orders',this.newOrder)
+                // 		.then((res)=>{
+                // 			this.orders.push(res.data)
+                // 		}).catch((err)=>{
+                // 			console.log(err)
+                // 		})
+                // },
+                cancel() {
+                    this.editIndex = null
+                    this.inputOrder.number = '',
+                        this.inputOrder.name = '',
+                        this.inputOrder.phonenumber = '',
+                        this.inputOrder.status = '',
+                        this.inputOrder.paystatus = '',
+                        this.inputOrder.shipstatus = '',
+                        this.inputOrder.amount = '',
+                        this.inputOrder.estbTime = ''
+                },
+                editOrder(index) {
+                    let { number, name, phonenumber, status, paystatus, shipstatus, amount, estbTime } = this.orders[index]
+                    this.editIndex = index
+                    this.inputOrder = {
+                        number,
+                        name,
+                        phonenumber,
+                        status,
+                        paystatus,
+                        shipstatus,
+                        amount,
+                        estbTime
+                    }
+                }
+            },
+            computed: {
+                searchlist: function () {
+                    var list = [];
+                    for (var i = 0; i < this.orders.length; i++) {
+                        if (this.orders[i].name.indexOf(this.search.searchname) != -1) {
+                            if (this.orders[i].phonenumber.indexOf(this.search.searchphone) != -1) {
+                                if (this.orders[i].status.indexOf(this.search.searchstatus) != -1) {
+                                    if (this.orders[i].paystatus.indexOf(this.search.searchpaystatus) != -1) {
+                                        if (this.orders[i].shipstatus.indexOf(this.search.searchshipstatus) != -1) {
+                                            list.push(this.orders[i])
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return list;
+                }
+            }
+        })
+    </script>
+
+
+</body>
+
+</html>

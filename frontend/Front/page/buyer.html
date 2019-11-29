@@ -1,0 +1,3480 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <!-- <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1.0,user-scalable=0;"> -->
+    <title>Buyer</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="/static/js/vue.js"></script>
+    <script src="/static/js/element.js"></script>
+    <script src="/static/js/js.cookie.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+</head>
+
+<body>
+    <div id="app">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col">
+                    <div class="header">
+                        <i class="el-icon-caret-left" @click="onExit"></i>
+                        <i class="headername">&{ name }</i>
+                        <i class="el-icon-user"></i>
+                        <i class="el-icon-shopping-bag-2" @click="shopbag"></i>
+                        <el-dialog title="購物車資訊" :visible.sync="shopbagTableVisible" center>
+                            <el-table :data="shopbagitem" empty-text="暫無訊息">
+                                <!-- <el-table-column label="商品圖片" prop="photo" width="150"></el-table-column> -->
+                                <el-table-column label="商品名稱" prop="itemName" width="150"></el-table-column>
+                                <el-table-column label="購買數量" prop="itemQuantity" width="150"></el-table-column>
+                                <el-table-column label="金額" prop="heightprice" width="150"></el-table-column>
+                            </el-table>
+                            <div slot="footer" class="dialog-footer">
+                                <button class="step1next" type="primary" @click="writeInfo">下一步</button>
+                            </div>
+                        </el-dialog>
+                        <el-dialog title="填寫取貨資訊" :visible.sync="pickupInfoFormVisible" center>
+                            <el-form :model="pickupInfo">
+                                <el-form-item label="收貨人姓名" :label-width="formLabelWidth">
+                                    <el-input v-model="pickupInfo.name" autocomplete="off"></el-input>
+                                </el-form-item>
+                                <el-form-item label="收貨人電話" :label-width="formLabelWidth">
+                                    <el-input v-model="pickupInfo.phonenumber" autocomplete="off"></el-input>
+                                </el-form-item>
+                                <el-form-item label="配送縣市" :label-width="formLabelWidth">
+                                        <el-input v-model="pickupInfo.country" autocomplete="off"></el-input>
+                                    </el-form-item>
+                                <el-form-item label="配送地址" :label-width="formLabelWidth">
+                                    <el-input v-model="pickupInfo.address" autocomplete="off"></el-input>
+                                </el-form-item>
+                            </el-form>
+                            <div slot="footer" class="dialog-footer">
+                                <button class="step2pre" type="primary" @click="backtoWriteInfo">上一步</button>
+                                <button class="step2next" type="primary" @click="checkInfo">下一步</button>
+                            </div>
+                        </el-dialog>
+                        <el-dialog title="購物車資訊" :visible.sync="checkInfoTableVisible" center>
+                            <el-table :data="checktable" empty-text="暫無訊息">
+                                <!-- <el-table-column label="商品圖片" prop="photo" width="150"></el-table-column> -->
+                                <el-table-column label="商品名稱" prop="itemName" width="150"></el-table-column>
+                                <el-table-column label="購買數量" prop="itemQuantity" width="150"></el-table-column>
+                                <el-table-column label="金額" prop="heightprice" width="150"></el-table-column>
+                            </el-table>
+                            <el-table :data="checktable">
+                                <el-table-column label="收貨人姓名" prop="name" width="150"></el-table-column>
+                                <el-table-column label="收貨人電話" prop="phonenumber" width="150"></el-table-column>
+                                <el-table-column label="配送縣市" prop="addressＣountry" width="150"></el-table-column>
+                                <el-table-column label="配送地址" prop="address" width="150"></el-table-column>
+                            </el-table>
+                            <div slot="footer" class="dialog-footer">
+                                <button class="step3pre" type="primary" @click="backtoPickupInfo">上一步</button>
+                                <button class="stepfinal" type="primary" @click="paymentStep">確認訂單</button>
+                            </div>
+                        </el-dialog>
+                        <el-dialog title="支付方式" :visible.sync="paymentFrameVisble" center>
+                            <div v-html="paymentFrameOuter">
+
+                            </div>
+                            <!-- <iframe src="https://payment-stage.ecpay.com.tw/" id="paymentFrame" height="500px" width="100%"></iframe> -->
+                        </el-dialog>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-7 col-md-7 col-lg-7">
+                    <div class="left">
+                        <div class="vedio">
+                            <!-- vedio -->
+                            <iframe id="streamingPlayer" width="100%" height="100%" frameborder="0"
+                                allow="accelerometer; autoplay; encrypted-media; gyroscope;picture-in-picture"
+                                allowfullscreen webkit-playsinline playsinline></iframe>
+                        </div>
+                        <div class="leftupper">
+                            <!-- 商品資訊btn -->
+                            <button class="infobtn" type="primary" @click="itemTableVisible = true">商品資訊
+                            </button>
+                            <el-dialog title="商品資訊" :visible.sync="itemTableVisible">
+                                <el-table :data="items" empty-text="暫無訊息">
+                                    <el-table-column label="商品名稱" prop="itemName" width="150">
+                                    </el-table-column>
+                                    <el-table-column label="商品數量" prop="itemQuantity" width="150">
+                                    </el-table-column>
+                                    <el-table-column label="單筆購買數量" prop="aSetQuantity" width="150">
+                                    </el-table-column>
+                                    <el-table-column label="起標價格" prop="itemPrice" width="150">
+                                    </el-table-column>
+                                    <el-table-column label="商品描述" prop="itemText" width="150">
+                                    </el-table-column>
+                                </el-table>
+                            </el-dialog>
+                            <!-- 目前競標商品btn -->
+                            <button class="bidpostbtn" type="primary" @click="bidTableVisible = true">目前競標商品</button>
+                            <el-dialog title="目前商品競標資訊" :visible.sync="bidTableVisible">
+                                <el-table :data="bidtable" empty-text="暫無訊息">
+                                    <el-table-column label="競標者" prop="name" width="150"></el-table-column>
+                                    <el-table-column label="競標價" prop="heightprice" width="150">
+                                    </el-table-column>
+                                </el-table>
+                            </el-dialog>
+                        </div>
+                        <div class="leftmiddle">
+                            <button class="addPrice1btn" type="primary" @click="addFucPrice1"
+                                v-if="showaddPrice1">+&{addPrice1}</button>
+                            <button class="addPrice2btn" type="primary" @click="addFucPrice2"
+                                v-if="showaddPrice2">+&{addPrice2}</button>
+                            <button class="addPrice3btn" type="primary" @click="addFucPrice3"
+                                v-if="showaddPrice3">+&{addPrice3}</button>
+                        </div>
+                        <!-- 目前競標商品資訊 -->
+                        <div class="leftbottom">
+                            <table class="table table-sm">
+                                <thead style="color: #DCD0C0;">
+                                    <tr>
+                                        <th>商品名稱</th>
+                                        <th>商品數量</th>
+                                        <th>單筆購買數量</th>
+                                        <th>起標價格</th>
+                                        <th>商品描述</th>
+                                        <th>競標時間</th>
+                                    </tr>
+                                </thead>
+                                <tbody style="color: #DCD0C0;">
+                                    <tr v-for="i of itembid">
+                                        <td>
+                                            &{ i.itemName }
+                                        </td>
+                                        <td>
+                                            &{ i.itemQuantity }
+                                        </td>
+                                        <td>
+                                            &{ i.aSetQuantity }
+                                        </td>
+                                        <td>
+                                            &{ i.itemPrice }
+                                        </td>
+                                        <td>
+                                            &{ i.itemText }
+                                        </td>
+                                        <td>
+                                            <span class="minute">&{ minutes }</span>
+                                            <span>:</span>
+                                            <span class="seconds">&{ seconds }</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <el-dialog title="流標" :visible.sync="bidFailDialogVisible" width="30%" center
+                                :before-close="FailhandleClose">
+                                <h2>感謝您熱情的參與競標!</h2>
+                                <span slot="footer" class="dialog-footer">
+                                    <button class="fialbidbtn" type="primary" @click="Failtempconfirm">確 定</button>
+                                </span>
+                            </el-dialog>
+                            <!-- 得標彈跳視窗 -->
+                            <el-dialog title="恭喜得標" :visible.sync="bidSusDialogVisible" width="30%" center
+                                :before-close="SushandleClose">
+                                <el-table :data="tempheight" :show-header="false" ref="table" empty-text="暫無數據">
+                                    <el-table-column>
+                                        <template slot-scope="scope">
+                                            <span style="font-size: 20px;">恭喜&{ scope.row.name
+                                                }以&{scope.row.heightprice}元得標</span>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                                <span slot="footer" class="dialog-footer">
+                                    <button class="winbidbtn" type="primary" @click="Sustempconfirm">確 定</button>
+                                </span>
+                            </el-dialog>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-5 col-md-5 col-lg-5">
+                    <div class="rightupper">
+                        <div class="heightbox">
+                            <!-- 目前最高價 -->
+                            <el-table :data="tempheight" :show-header="false" empty-text="尚未有最高價" height="100%">
+                                <el-table-column>
+                                    <template slot-scope="scope">
+                                        <div class="heightmsg">
+                                            <p class="hightp">目前最高價: <span>&{ scope.row.name } :
+                                                    &{scope.row.heightprice}</span></p>
+                                        </div>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                        <div class="chatbox">
+                            <!-- 聊天視窗 -->
+                            <el-table :data="chatData" :show-header="false" ref="chattable" empty-text="暫無訊息"
+                                :row-style="tableRowStyle" height="100%">
+                                <el-table-column>
+                                    <template slot-scope="scope">
+                                        <div class="onemsg">
+                                            <span class="chatuser">@&{ scope.row.user }</span>
+                                            <i class="el-icon-time"></i>
+                                            <span class="chattime">&{ scope.row.timestamp| formatDate }</span>
+                                            <p>&{ scope.row.text }</p>
+                                        </div>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
+                    <div class="rightlower">
+                        <!-- 聊天輸入框 -->
+                        <el-input class="inputbox" placeholder="Type here..." v-model="msg" ref="input"
+                            @keyup.enter.native="sendMessage">
+                        </el-input>
+                        <!-- 傳送、清空btn -->
+                        <button class="sendbtn" type="primary" @click="sendMessage">發送</el-button>
+                            <button class="clearbtn" type="info" @click="clearInput">清空</el-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/buyer_default.js"></script>
+    <script src="/static/js/buyer_class.js"></script>
+    <script src="/static/js/buyer.js"></script>
+</body>
+<style>
+    /* 桌電螢幕 */
+    @media only screen and (max-width: 1920px) and (min-width:1080px) {
+        .container-fluid {
+            background-color: #373737;
+            font-family: "微軟正黑體";
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        .title {
+            font-family: "微軟正黑體";
+        }
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 30px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 82vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 8vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 82vw;
+            margin-top: 5px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 1vw;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 5vh;
+            height: 60vh;
+        }
+
+        .leftupper {
+            margin-top: 2vh;
+        }
+
+        .leftmiddle {
+            margin-top: 2vh;
+            margin-left: 10vw;
+        }
+
+        .leftbottom {
+            margin-top: 2vh;
+            font-size: 15px;
+        }
+
+        .infobtn {
+            margin-left: 15vw;
+            margin-right: 2vw;
+        }
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            margin-right: 2vw;
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #f4f4f4 !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 6vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 25px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 76vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 15px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 27vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 25px;
+            margin-right: 40px;
+        }
+
+
+        /* ---------------------button size-------------------- */
+        .fialbidbtn,
+        .winbidbtn {
+            width: 80px;
+        }
+
+        .infobtn {
+            width: 90px;
+        }
+
+        .bidpostbtn {
+            width: 120px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            width: 80px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .step1next:before,
+        .step2pre:before,
+        .step2next:before,
+        .step3pre:before,
+        .stepfinal:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .step1next:hover:before,
+        .step2pre:hover:before,
+        .step2next:hover:before,
+        .step3pre:hover:before,
+        .stepfinal:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftupper button style---------- */
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addPrice1btn:before,
+        .addPrice2btn:before,
+        .addPrice3btn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addPrice1btn:hover:before,
+        .addPrice2btn:hover:before,
+        .addPrice3btn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+
+        .fialbidbtn,
+        .winbidbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+
+        .fialbidbtn:before,
+        .winbidbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .fialbidbtn:hover:before,
+        .winbidbtn:hover:before {
+            left: 100px;
+        }
+    }
+
+    /*筆電 */
+    @media only screen and (max-width: 1440px) and (min-width: 900px) {
+        .container-fluid {
+            background-color: #373737;
+            font-family: "微軟正黑體";
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        .title {
+            font-family: "微軟正黑體";
+        }
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 25px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 82vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 8vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 78vw;
+            margin-top: 8px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 10px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 5vh;
+            height: 60vh;
+        }
+
+        .leftupper {
+            margin-top: 2vh;
+        }
+
+        .leftmiddle {
+            margin-top: 2vh;
+            margin-left: 10vw;
+        }
+
+        .leftbottom {
+            margin-top: 2vh;
+            font-size: 15px;
+        }
+
+        .infobtn {
+            margin-left: 15vw;
+            margin-right: 2vw;
+        }
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            margin-right: 2vw;
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #f4f4f4 !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 6vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 25px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 76vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 15px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 22vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 10px;
+            margin-right: 5px;
+        }
+
+
+        /* ---------------------button size-------------------- */
+        .fialbidbtn,
+        .winbidbtn {
+            width: 80px;
+        }
+
+        .infobtn {
+            width: 90px;
+        }
+
+        .bidpostbtn {
+            width: 120px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            width: 80px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .step1next:before,
+        .step2pre:before,
+        .step2next:before,
+        .step3pre:before,
+        .stepfinal:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .step1next:hover:before,
+        .step2pre:hover:before,
+        .step2next:hover:before,
+        .step3pre:hover:before,
+        .stepfinal:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftupper button style---------- */
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addPrice1btn:before,
+        .addPrice2btn:before,
+        .addPrice3btn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addPrice1btn:hover:before,
+        .addPrice2btn:hover:before,
+        .addPrice3btn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+
+        .fialbidbtn,
+        .winbidbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+
+        .fialbidbtn:before,
+        .winbidbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .fialbidbtn:hover:before,
+        .winbidbtn:hover:before {
+            left: 100px;
+        }
+    }
+
+    /*筆電 */
+    @media only screen and (max-width: 1280px) and (min-width: 800px) {
+        .container-fluid {
+            background-color: #373737;
+            font-family: "微軟正黑體";
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        .title {
+            font-family: "微軟正黑體";
+        }
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 25px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 82vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 8vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 78vw;
+            margin-top: 8px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 10px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 5vh;
+            height: 60vh;
+        }
+
+        .leftupper {
+            margin-top: 2vh;
+        }
+
+        .leftmiddle {
+            margin-top: 2vh;
+            margin-left: 10vw;
+        }
+
+        .leftbottom {
+            margin-top: 2vh;
+            font-size: 15px;
+        }
+
+        .infobtn {
+            margin-left: 15vw;
+            margin-right: 2vw;
+        }
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            margin-right: 2vw;
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #f4f4f4 !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 6vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 25px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 76vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 15px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 22vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 10px;
+            margin-right: 5px;
+        }
+
+
+        /* ---------------------button size-------------------- */
+        .fialbidbtn,
+        .winbidbtn {
+            width: 80px;
+        }
+
+        .infobtn {
+            width: 90px;
+        }
+
+        .bidpostbtn {
+            width: 120px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            width: 80px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .step1next:before,
+        .step2pre:before,
+        .step2next:before,
+        .step3pre:before,
+        .stepfinal:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .step1next:hover:before,
+        .step2pre:hover:before,
+        .step2next:hover:before,
+        .step3pre:hover:before,
+        .stepfinal:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftupper button style---------- */
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addPrice1btn:before,
+        .addPrice2btn:before,
+        .addPrice3btn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addPrice1btn:hover:before,
+        .addPrice2btn:hover:before,
+        .addPrice3btn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+
+        .fialbidbtn,
+        .winbidbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+
+        .fialbidbtn:before,
+        .winbidbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .fialbidbtn:hover:before,
+        .winbidbtn:hover:before {
+            left: 100px;
+        }
+    }
+
+    /* iPad*/
+    @media only screen and (max-width: 1024px) and (min-width:768px) {
+        .container-fluid {
+            background-color: #373737;
+            /* font-family: "微軟正黑體"; */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        /* .title {
+            font-family: "微軟正黑體";
+        } */
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 25px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 84vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 6vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 75vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 2px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 1vh;
+            height: 55vh;
+        }
+
+        .leftupper {
+            margin-top: 1vh;
+            margin-left: 6vw;
+        }
+
+        .leftmiddle {
+            margin-top: 1vh;
+            margin-left: 6vw;
+        }
+
+        .leftbottom {
+            margin-top: 1vh;
+            font-size: 10px;
+        }
+
+        .infobtn {
+            margin-left: 10vw;
+            margin-right: 2vw;
+        }
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            margin-right: 2vw;
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #FFFFFF !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 10vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 15px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 74vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 10px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 22vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 15px;
+            margin-right: 10px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            height: 35px;
+            width: 60px;
+        }
+
+        .fialbidbtn,
+        .winbidbtn {
+            width: 60px;
+        }
+
+        .infobtn {
+            height: 40px;
+            width: 70px;
+        }
+
+        .bidpostbtn {
+            height: 40px;
+            width: 100px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            height: 40px;
+            width: 70px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        /* ------------leftupper button style---------- */
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 15px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 15px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addPrice1btn:before,
+        .addPrice2btn:before,
+        .addPrice3btn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addPrice1btn:hover:before,
+        .addPrice2btn:hover:before,
+        .addPrice3btn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 15px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+
+        .fialbidbtn,
+        .winbidbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .fialbidbtn:before,
+        .winbidbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .fialbidbtn:hover:before,
+        .winbidbtn:hover:before {
+            left: 100px;
+        }
+    }
+
+    /* iPhone X*/
+    @media only screen and (max-width: 817px) and (min-width:375px) {
+        .container-fluid {
+            background-color: #373737;
+            /* font-family: "微軟正黑體"; */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        /* .title {
+            font-family: "微軟正黑體";
+        } */
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 15px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 78vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 12vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 78vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 2px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 1vh;
+            height: 55vh;
+        }
+
+        .leftupper {
+            margin-top: 1vh;
+        }
+
+        .leftmiddle {
+            margin-top: 1vh;
+            margin-left: 6vw;
+        }
+
+        .leftbottom {
+            margin-top: 1vh;
+            font-size: 10px;
+        }
+
+        .infobtn {
+            margin-left: 10vw;
+            margin-right: 2vw;
+        }
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            margin-right: 2vw;
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #FFFFFF !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 10vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 15px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 68vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 10px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 22vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 15px;
+            margin-right: 10px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            height: 35px;
+            width: 60px;
+        }
+
+        .fialbidbtn,
+        .winbidbtn {
+            width: 50px;
+        }
+
+        .infobtn {
+            height: 30px;
+            width: 70px;
+        }
+
+        .bidpostbtn {
+            height: 30px;
+            width: 90px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            height: 35px;
+            width: 45px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        /* ------------leftupper button style---------- */
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addPrice1btn:before,
+        .addPrice2btn:before,
+        .addPrice3btn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addPrice1btn:hover:before,
+        .addPrice2btn:hover:before,
+        .addPrice3btn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+
+        .fialbidbtn,
+        .winbidbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .fialbidbtn:before,
+        .winbidbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .fialbidbtn:hover:before,
+        .winbidbtn:hover:before {
+            left: 100px;
+        }
+    }
+
+    /* i6/6s/7/8 plus*/
+    @media only screen and (max-width: 741px) and (min-width:419px) {
+        .container-fluid {
+            background-color: #373737;
+            /* font-family: "微軟正黑體"; */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        /* .title {
+            font-family: "微軟正黑體";
+        } */
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 15px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 78vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 12vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 76vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 2px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 1vh;
+            height: 55vh;
+        }
+
+        .leftupper {
+            margin-top: 1vh;
+        }
+
+        .leftmiddle {
+            margin-top: 1vh;
+            margin-left: 6vw;
+        }
+
+        .leftbottom {
+            margin-top: 1vh;
+            font-size: 10px;
+        }
+
+        .infobtn {
+            margin-left: 10vw;
+            margin-right: 2vw;
+        }
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            margin-right: 2vw;
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #FFFFFF !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 10vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 15px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 68vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 10px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 22vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 7px;
+            margin-right: 10px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            height: 35px;
+            width: 60px;
+        }
+
+        .fialbidbtn,
+        .winbidbtn {
+            width: 50px;
+        }
+
+        .infobtn {
+            height: 30px;
+            width: 70px;
+        }
+
+        .bidpostbtn {
+            height: 30px;
+            width: 90px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            height: 30px;
+            width: 40px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        /* ------------leftupper button style---------- */
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addPrice1btn:before,
+        .addPrice2btn:before,
+        .addPrice3btn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addPrice1btn:hover:before,
+        .addPrice2btn:hover:before,
+        .addPrice3btn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+
+        .fialbidbtn,
+        .winbidbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .fialbidbtn:before,
+        .winbidbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .fialbidbtn:hover:before,
+        .winbidbtn:hover:before {
+            left: 100px;
+        }
+    }
+
+    /* i6/6s/7/8 */
+    @media only screen and (max-width: 672px) and (min-width:380px) {
+        html {
+            background-color: #373737;
+        }
+
+        .container-fluid {
+            background-color: #373737;
+            /* font-family: "微軟正黑體"; */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        /* .title {
+            font-family: "微軟正黑體";
+        } */
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 15px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 78vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 12vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 74vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 2px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 1vh;
+            height: 55vh;
+        }
+
+        .leftupper {
+            margin-top: 1vh;
+        }
+
+        .leftmiddle {
+            margin-top: 1vh;
+            margin-left: 6vw;
+        }
+
+        .leftbottom {
+            margin-top: 1vh;
+            font-size: 10px;
+        }
+
+        .infobtn {
+            margin-left: 10vw;
+            margin-right: 2vw;
+        }
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            margin-right: 2vw;
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #FFFFFF !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 10vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 15px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 68vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 10px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 22vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 7px;
+            margin-right: 7px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            height: 35px;
+            width: 60px;
+        }
+
+        .fialbidbtn,
+        .winbidbtn {
+            width: 50px;
+        }
+
+        .infobtn {
+            width: 70px;
+        }
+
+        .bidpostbtn {
+            width: 90px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            height: 30px;
+            width: 40px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        /* ------------leftupper button style---------- */
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addPrice1btn:before,
+        .addPrice2btn:before,
+        .addPrice3btn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addPrice1btn:hover:before,
+        .addPrice2btn:hover:before,
+        .addPrice3btn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+
+        .fialbidbtn,
+        .winbidbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .fialbidbtn:before,
+        .winbidbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .fialbidbtn:hover:before,
+        .winbidbtn:hover:before {
+            left: 100px;
+        }
+    }
+
+    /*S7*/
+    @media only screen and (max-width: 645px) and (min-width:360px) {
+        html {
+            background-color: #373737;
+        }
+
+        .container-fluid {
+            background-color: #373737;
+            /* font-family: "微軟正黑體"; */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        /* .title {
+            font-family: "微軟正黑體";
+        } */
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 15px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 78vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 12vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 74vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 2px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 1vh;
+            height: 55vh;
+        }
+
+        .leftupper {
+            margin-top: 1vh;
+        }
+
+        .leftmiddle {
+            margin-top: 1vh;
+            margin-left: 6vw;
+        }
+
+        .leftbottom {
+            margin-top: 1vh;
+            font-size: 10px;
+        }
+
+        .infobtn {
+            margin-left: 10vw;
+            margin-right: 2vw;
+        }
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            margin-right: 2vw;
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #FFFFFF !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 10vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 15px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 68vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 10px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 22vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 5px;
+            margin-right: 3px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            height: 35px;
+            width: 60px;
+        }
+
+        .fialbidbtn,
+        .winbidbtn {
+            width: 50px;
+        }
+
+        .infobtn {
+            width: 70px;
+        }
+
+        .bidpostbtn {
+            width: 90px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            height: 30px;
+            width: 40px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+        .step1next,
+        .step2pre,
+        .step2next,
+        .step3pre,
+        .stepfinal {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        /* ------------leftupper button style---------- */
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 1px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+
+        .addPrice1btn,
+        .addPrice2btn,
+        .addPrice3btn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addPrice1btn:before,
+        .addPrice2btn:before,
+        .addPrice3btn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addPrice1btn:hover:before,
+        .addPrice2btn:hover:before,
+        .addPrice3btn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+
+        .fialbidbtn,
+        .winbidbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .fialbidbtn:before,
+        .winbidbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .fialbidbtn:hover:before,
+        .winbidbtn:hover:before {
+            left: 100px;
+        }
+    }
+</style>
+
+</html>

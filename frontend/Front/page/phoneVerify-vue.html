@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>手機驗證</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link href="css/phoneVerify-vue.css" rel="stylesheet" type="text/css">
+    <link href="/static/css/phoneVerify-vue.css" rel="stylesheet" type="text/css">
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+
+    <h1>手 機 驗 證</h1>
+    <div id="app">
+        <div class="container">
+            <input v-model:value="inputPhone" id="inputPhone" :placeholder="inputHint" class="input"/><div @click="send" class="btn">送	出</div>
+            <br><span class="warningText"><span v-html="warningText"></span><div @click="reSend" class="reSend" v-html="reSendText"></div></span>
+        </div>
+        <br>
+    </div>
+    <script>
+       const service = axios.create()
+
+        const app = new Vue({
+            delimiters: ['&{', '}'],
+            el: '#app',
+            data() {
+                return {
+                    warningText: '',
+                    reSendText: '',
+                    inputPhone: '',           //input
+                    step: 99,
+                    inputHint: '請輸入手機號碼',
+                    phone: null,
+                    cd:null,
+                }
+            },
+            watch:{
+                inputPhone(value) {
+                    let a =/^09[0-9]{8}$/
+                    if(this.step!=2)
+                        this.step=a.test(value)?1:99
+                }
+            },
+            methods: {
+                send() {
+                    console.log(this.step)
+                    console.log(this.inputPhone)
+                    if (this.step == 1) {
+                        service({
+                            url: 'https://api.itlive.nctu.me/login/verify/phone',
+                            method: 'POST',
+                            data: {
+                                phone: `${this.inputPhone}`
+                            },
+                            withCredentials: true
+                        }).then(resp => {
+                            console.log(resp.data)
+
+                            if (resp.data.state == 'ok') {
+                                console.log('ok')
+                                this.phone=this.inputPhone
+                                this.cd = this.cdExp(resp.data.data.exp*1000)
+                                //this.warningText = '驗證碼已寄至 ' + this.inputPhone + '<br>請於 5分鐘內輸入，'
+                                this.reSendText = '點擊此處重新寄發。'
+                                this.inputHint = '請輸入驗證碼'
+                                this.inputPhone = ''
+                                this.step++
+                            }
+                            else {
+                                this.warningText = '目前系統無法服務，請稍後再試 error code e1'
+                            }
+                        }).catch((err) => {
+                            console.log(err)
+                            this.warningText = '目前系統無法服務，請稍後再試 error code e2'
+                        })
+                    }
+                    else if (this.step == 2) {
+
+                        clearInterval( this.cd )
+                        service({
+                            url: 'https://api.itlive.nctu.me/login/verify/code',
+                            method: 'POST',
+                            data: {
+                                vcode: `${this.inputPhone}`
+                            },
+                            withCredentials: true
+                        }).then(resp => {
+
+                            console.log(resp.data)
+
+                            if (resp.data.data == 'ok') {
+                                window.location.href="/regIsSeller"
+                            }
+                            else if(resp.data.data == "timeout"){
+                                this.step = 1
+                                this.inputHint = '請輸入手機號碼'
+                                this.inputPhone = ''
+                                this.reSendText = ''
+                                this.warningText = '驗證碼過期，請重新輸入手機號碼'
+                            }
+                            else {
+                                this.warningText = '驗證碼錯誤，請重新輸入。'
+                                this.reSendText = '或點擊此處重新寄發。'
+                            }
+                        }).catch(() => {
+                            this.warningText = '目前系統無法服務，請稍後再試'
+                        })
+                    }
+                    else if (this.step == 99){
+                        this.warningText='請輸入 09開頭的手機號碼。'
+                    }
+                },
+                reSend() {
+                    this.step = 1
+                    this.inputHint = '請輸入手機號碼'
+                    this.inputPhone = ''
+                    this.reSendText = ''
+                    this.warningText = ''
+                },
+                cdExp(exp){
+                    let e=()=>{
+                        clearInterval( this.cd )
+                        this.warningText = '驗證碼已逾時，'
+                    }
+                    let gMS = i =>{
+                        let m = Math.floor(i/60), s = Math.ceil(i%60)
+                        return `${m}:${s<10?'0'+s:s}`
+                    }
+                    return window.setInterval(()=>{
+                        let i = ( exp - Date.now() ) / 1000
+                        i > 0 ? (this.warningText = '驗證碼已寄至 ' + this.phone + '<br>請於 ' +gMS( Math.ceil( i ))+'分鐘內輸入，'):e()
+                    },1000)
+                },
+            }
+        })
+    </script>
+</body>
+</html>

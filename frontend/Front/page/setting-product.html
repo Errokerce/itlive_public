@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>商品上架</title>
+	<link href="css/setting-product.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+	<div id="app">
+		<h1>商品設定</h1>		
+			<div class="tab-inner">
+				<div class="row">
+					<div class="left">
+						<p>商品名稱：<input placeholder="Name" name="pname" v-model="itemInput.itemName" required></p>
+						<p>商品數量：<input placeholder="1" name="unum" v-model="itemInput.itemQuantity" required></p>
+						<p>單筆購買數：<input class="buynu" placeholder="1" name="upernum" v-model="itemInput.aSetQuantity" required></p>
+						<p class="discribe">商品描述：</p>
+						<textarea rows="3" cols="36" placeholder="說明" v-model="itemInput.itemText"></textarea>
+					</div>
+					<div class="right">
+						<p class="pprice">起標價格：TWD$ <input class="price" name="price" v-model="itemInput.itemPrice" placeholder="200" required> 元</p>
+						<p class="pprice">一跳價格：TWD$ <input class="price" name="price" v-model="itemInput.addPrice1" placeholder="10" required> 元</p>
+						<p class="pprice">一跳價格：TWD$ <input class="price" name="price" v-model="itemInput.addPrice2" placeholder="50"> 元</p>
+						<p class="pprice">一跳價格：TWD$ <input class="price" name="price" v-model="itemInput.addPrice3"
+								placeholder="100"> 元</p>
+					</div>
+				</div>
+				
+			</div>
+			<div class="btnform">
+					<button class="button" @click="putItem">上 架</button>
+					<button class="strbutton" @click="getItem">開始直播</button>
+			</div>
+		<table>
+			<tr>
+				<td>已登入商品個數 :</td> <td>&{countItems}</td>
+			</tr>
+		</table>
+	</div>
+	
+	
+	<script src="https://unpkg.com/vue/dist/vue.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.js"></script>
+	<script>
+		const vue = new Vue({
+			
+            delimiters: ['&{', '}'],
+			el: '#app',
+			data() {
+				return {
+					items: [],
+					itemInput: {
+						itemName: '',
+						itemQuantity: '',
+						aSetQuantity: '',
+						itemPrice: '',
+						addPrice1: '',
+						addPrice2: '',
+						addPrice3: '',
+						itemText: ''
+					},
+					countItems:'0'
+				}
+			},
+			mounted(){
+				axios.get('http://localhost:8888/items')
+					.then((res) => {
+						this.items = res.data
+						this.countItems = this.items.length
+					}).catch((err) => {
+						console.log(err)
+					})
+			},
+			methods: {
+				putItem() {
+					if(this.countItems <= 10){
+						alert('以達到登入商品數量上限10個')
+						return
+					}
+					
+					let { itemName, itemQuantity, aSetQuantity, itemPrice, addPrice1, addPrice2, addPrice3, itemText } = this.itemInput
+
+					if (this.itemInput.itemName.trim().length == 0 || this.itemInput.itemQuantity.trim().length == 0 || this.itemInput.aSetQuantity.trim().length == 0 || this.itemInput.itemPrice.trim().length == 0 || this.itemInput.addPrice1.trim().length == 0 || this.itemInput.itemText.trim().length == 0) {
+						alert('內容一定都要填寫')
+						return
+					}
+
+					axios.post('http://localhost:8888/items', this.itemInput)
+						.then((res) => {
+							this.cancelHandler()
+							this.getItem()
+						}).catch((err) => {
+							console.log(err)
+						})
+				},
+				cancelHandler() {
+					this.itemInput.itemName = '',
+						this.itemInput.itemQuantity = '',
+						this.itemInput.aSetQuantity = '',
+						this.itemInput.itemPrice = '',
+						this.itemInput.addPrice1 = '',
+						this.itemInput.addPrice2 = '',
+						this.itemInput.addPrice3 = '',
+						this.itemInput.itemText = ''
+				},
+				gotoVedio() {
+
+				},
+				getItem(){
+					axios.get('http://localhost:8888/items')
+					.then((res) => {
+						this.items = res.data
+						this.countItems = this.items.length
+					}).catch((err) => {
+						console.log(err)
+					})
+				}
+			}
+		})
+	</script>
+</body>
+
+</html>

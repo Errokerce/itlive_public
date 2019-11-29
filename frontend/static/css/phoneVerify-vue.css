@@ -1,0 +1,117 @@
+@charset "utf-8";
+
+    html {
+        background-color: #373737;
+		font-family: "微軟正黑體";
+    }
+
+    #app {
+        margin-top: 3em;
+    }
+
+    h1 {
+        text-align: center;
+        margin-top: 8rem;
+        font-size: 40px;
+		color: #C0B283;
+		font-family: "微軟正黑體";      
+    }
+
+	.warningText,.reSendText{
+		color: #f4f4f4;
+	}
+
+    .container {
+        text-align: center;
+        height: 4rem;
+        padding: 0;
+    }
+
+    .input {
+        width: 10rem;
+        height: 0.7rem;
+
+        display: inline-block;
+        vertical-align: top;
+
+        border: 1px;
+        border-right: 0;
+        border-radius: 1.3em 0 0 1.3em;
+        border-style: solid;
+
+        padding: 1rem;
+        padding-left: 1.2rem;
+        font-size: 0.8rem;
+
+        outline: 0;
+    }
+
+    .btn {
+		font-family: "微軟正黑體";  
+        position: relative;
+		width: 3rem;
+        height: 0.8rem;
+		line-height: 1rem;
+        display: inline-block;
+        vertical-align: top;
+
+        border: none;
+        border-radius: 0 1.3em 1.3em 0;
+
+        background: #C0B283;
+        color: #FFFFFF;
+
+        padding: 1rem;
+        padding-left: 0.8rem;
+        font-size: 17px;
+		
+		text-align: center;
+ 		font-weight: bold;
+ 		text-decoration: none;
+		
+ 		overflow: hidden;
+		-webkit-transition: all 0.15s ease-in;
+				transition: all 0.15s ease-in;
+		
+    }
+	.btn:before {
+ 		content: ' ';
+ 		position: absolute;
+ 		background: #fff;
+ 		width: 25px;
+ 		height: 50px;
+ 		top: 0;
+ 		left: -45px;
+ 		opacity: 0.3;
+ 		-webkit-transition: all 0.25s ease-out;
+ 		transition: all 0.25s ease-out;
+ 		-webkit-transform: skewX(-25deg);
+         		transform: skewX(-25deg);
+}   
+    .btn:hover {
+        border-color: #C0B283;
+
+    }
+	
+	.btn:hover:before{
+		left: 100px;
+	}
+
+    .warningText {
+        display: inline-block;
+        margin-top: 1.5rem;
+        font-size: 0.8rem;
+    }
+
+    .reSend {
+        display: inline;
+    }
+
+    .reSend:hover {
+        color: blue;
+        text-decoration: underline;
+    }
+
+
+
+	

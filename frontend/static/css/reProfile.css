@@ -1,0 +1,100 @@
+@charset "utf-8";
+
+html{
+	font-family: "微軟正黑體";
+	background-color: #373737;
+}
+
+h1{
+	margin-top: 4rem;
+	text-align: center;
+	font-size: 40px;
+	color: #c0b283;
+}
+
+table{
+	margin: auto;
+}
+
+.container{
+	margin: auto;
+	width: 50%;
+	border-left-color: #C0B283;
+	border-left-width: 2px;
+	border-left-style: solid;
+}
+.cellName{
+	font-family: "微軟正黑體";
+	color: #f4f4f4;
+	font-size: 20px;
+}
+
+.inputBox{
+	border-radius: 5px;
+	border:none;
+	height: 20px;
+	background-color: #f4f4f4;
+}
+
+/*----------------- buttpn ---------------*/
+.sbtn{
+	margin-top: 2rem;
+	margin-left:  45%;
+	background-color: #c0b283;
+	color: #f4f4f4;
+	text-align: center;
+	width: 80px;
+	padding: 10px;
+	font-size: 17px;
+	font-family: "微軟正黑體";
+	position: relative;
+ 		
+    border-radius: 1.3em;
+    border: none;
+
+		overflow: hidden;
+ 		-webkit-transition: all 0.15s ease-in;
+ 		transition: all 0.15s ease-in;
+}
+
+.sbtn:before{
+		content: ' ';
+ 		position: absolute;
+ 		background: #fff;
+ 		width: 25px;
+ 		height: 50px;
+ 		top: 0;
+ 		left: -45px;
+ 		opacity: 0.3;
+ 		-webkit-transition: all 0.25s ease-out;
+ 				transition: all 0.25s ease-out;
+ 		-webkit-transform: skewX(-25deg);
+         		transform: skewX(-25deg);
+}
+
+.sbtn:hover:before{
+	left: 100px;
+}
+
+/*---- S7 :360px-----*/
+/*---- iphone 6/7/8:375px & 6/7/8 plus:414px -----*/
+@media screen and (min-width: 360px){
+	.container{
+		margin: auto;
+		width: 15rem;
+		border-left-color: #C0B283;
+		border-left-width: 2px;
+		border-left-style: solid;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,4438 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <!-- <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1.0,user-scalable=0;"> -->
+    <title>直播中</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="/static/js/vue.js"></script>
+    <script src="/static/js/element.js"></script>
+    <script src="/static/js/js.cookie.js"></script>
+    <!-- <script src="https://unpkg.com/element-ui/lib/index.js"></script> -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col">
+                    <div class="header">
+                        <i class="el-icon-caret-left" @click="onExit"></i>
+                        <i class="headername">&{ name }</i>
+                        <i class="el-icon-user" href="/"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <!------ left ------->
+                <div class="col-sm-7 col-md-7 col-lg-7">
+                    <div class="left">
+                        <div class="vedio">
+                            <iframe id="streamingPlayer" width="100%" height="100%"
+                                 frameborder="0"
+                                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen></iframe>
+                        </div>
+                        <div class="leftupper">
+                            <div class="row">
+                                <div class="col-2 col-sm-2 col-md-2 col-lg-2">
+                                    <!--- 伸縮工具--->
+                                    <!-- 圖示 -->
+                                    <div id="flip" class="container" onclick="myFunction(this)">
+                                        <div class="bar1"></div>
+                                        <div class="bar2"></div>
+                                        <div class="bar3"></div>
+                                        
+                                    </div>
+                                    <div id="panel">
+                                        <button class="addbtn" type="primary"
+                                            @click="dialogFormVisible =true">商品上架</button>
+                                        <button class="infobtn" type="primary"
+                                            @click="itemTableVisible = true">商品資訊</button>
+                                        <button class="bidpostbtn" type="primary"
+                                            @click="bidTableVisible = true">目前競標商品</button>
+                                        
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-7 col-md-7 col-lg-6">
+                                    <select class="sctitem" v-model="biditemSelect.itemName" v-if="showselect">
+                                        <option selected value="">選擇商品</option>
+                                        <option v-for="item in items" :key="item.id" :label="item.itemName" v-bind:value="item">
+
+                                        </option>
+                                    </select>
+                                    <select class="scttime" v-model="biditemSelect.totalTime" v-if="showselect">
+                                        <option selected value="">選擇時間</option>
+                                        <option v-for="ttime in times" :key="ttime.id" :label="ttime.title" :value="ttime.totalTime">
+                                        </option>
+                                    </select>
+                                    <button class="startbtn" @click="putbidItem" v-if="showBidBut">開始競標</button>
+                                </div>
+                                <div class="col-4 col-sm-3 col-md-3 col-lg-4">
+                                    <button class="bidsuccess" type="primary" @click="bidSuccess">成交</button>
+                                    <button class="bidfail" type="primary" @click="bidFail">流標</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="leftmiddle">
+                            <div class="row">
+                                <div class="col">
+                                    <button class="stopbtn" type="primary" @click="stopTimer"
+                                        v-if="showPauBut">暫停</button>
+                                    <button class="continuebtn" type="primary" @click="continueTimer"
+                                        v-if="showConBut">繼續</button>
+                                    <button class="resetbtn" type="primary" @click="resetTimer"
+                                        v-if="showResBut">重新</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="leftbottom">
+                            <table class="table table-sm">
+                                <thead style="color: #DCD0C0;">
+                                    <tr>
+                                        <th>商品名稱</th>
+                                        <th>商品數量</th>
+                                        <th>單筆購買數量</th>
+                                        <th>起標價格</th>
+                                        <th>商品描述</th>
+                                        <th>競標時間</th>
+                                    </tr>
+                                </thead>
+                                <tbody style="color: #DCD0C0;">
+                                    <tr v-for="i of itembid">
+                                        <td>
+                                            &{ i.itemName }
+                                        </td>
+                                        <td>
+                                            &{ i.itemQuantity }
+                                        </td>
+                                        <td>
+                                            &{ i.aSetQuantity }
+                                        </td>
+                                        <td>
+                                            &{ i.itemPrice }
+                                        </td>
+                                        <td>
+                                            &{ i.itemText }
+                                        </td>
+                                        <td>
+                                            <span class="minute">&{ minutes }</span>
+                                            <span>:</span>
+                                            <span class="seconds">&{ seconds }</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <el-dialog title="競標時間結束" :visible.sync="timeendDialogVisible" width="30%" center :before-close="timeendHandelClose">
+                            <el-table :data="tempheight" :show-header="false" ref="table" empty-text="暫無數據">
+                                <el-table-column>
+                                    <template slot-scope="scope">
+                                        <span style="font-size: 20px;">最高價為&{scope.row.heightprice}</span>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <span slot="footer" class="dialog-footer">
+                                <button class="tendsusbtn" type="primary" @click="bidSuccess">成交</button>
+                                <button class="tendfailbtn" type="primary" @click="bidFail">流標</button>
+                            </span>
+                        </el-dialog>
+                        <!-- 流標button (button class=bidfail) -->
+                        <el-dialog title="流標" :visible.sync="bidFailDialogVisible" width="30%" center
+                            :before-close="FailHandleClose">
+                            <el-table :data="tempheight" :show-header="false" ref="table" empty-text="暫無數據">
+                                <el-table-column>
+                                    <template slot-scope="scope">
+                                        <span style="font-size: 20px;">最高價為&{scope.row.heightprice},未達預設價格流標</span>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <span slot="footer" class="dialog-footer">
+                                <button class="failsurebidbtn" type="primary" @click="Failtempconfirm">確 定</button>
+                            </span>
+                        </el-dialog>
+                        <!-- 得標button (button class=bidsuccess) -->
+                        <el-dialog title="恭喜得標" :visible.sync="bidSusDialogVisible" width="30%" center
+                            :before-close="SusHandleClose">
+                            <el-table :data="tempheight" :show-header="false" ref="table" empty-text="暫無數據">
+                                <el-table-column>
+                                    <template slot-scope="scope">
+                                        <span style="font-size: 20px;">恭喜&{ scope.row.name }以&{
+                                            scope.row.heightprice
+                                            }元得標</span>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <span slot="footer" class="dialog-footer">
+                                <button class="winsurebidbtn" type="primary" @click="Sustempconfirm">確 定</button>
+                            </span>
+                        </el-dialog>
+                        <!-- 目前競標商品資訊button (button class=bidpostbtn) -->
+                        <el-dialog title="目前商品競標資訊" :visible.sync="bidTableVisible">
+                            <el-table :data="bidtable" empty-text="暫無數據">
+                                <el-table-column label="競標者" prop="name" width="150"></el-table-column>
+                                <el-table-column label="競標價" prop="heightprice" width="150"></el-table-column>
+                            </el-table>
+                        </el-dialog>
+                        <!-- 已登入的商品資訊button (button class=infmbtn) -->
+                        <el-dialog title="商品資訊" :visible.sync="itemTableVisible">
+                            <el-table :data="items" empty-text="暫無數據">
+                                <el-table-column label="商品名稱" prop="itemName" width="150"></el-table-column>
+                                <el-table-column label="商品數量" prop="itemQuantity" width="150"></el-table-column>
+                                <el-table-column label="單筆購買數量" prop="aSetQuantity" width="150"></el-table-column>
+                                <el-table-column label="起標價格" prop="itemPrice" width="150"></el-table-column>
+                                <el-table-column label="商品描述" prop="itemText" width="150"></el-table-column>
+                            </el-table>
+                        </el-dialog>
+                        <!-- 商品臨時上架 button (button class=addbtn)-->
+                        <el-dialog title="商品上架" :visible.sync="dialogFormVisible" center>
+                            <el-form :model="formitems">
+                                <el-form-item label="商品名稱" :label-width="formLabelWidth">
+                                    <el-input v-model="formitems.itemName" autocomplete="off"></el-input>
+                                </el-form-item>
+                                <el-form-item label="商品數量" :label-width="formLabelWidth">
+                                    <el-input v-model="formitems.itemQuantity" autocomplete="off"></el-input>
+                                </el-form-item>
+                                <el-form-item label="單筆購買數量" :label-width="formLabelWidth">
+                                    <el-input v-model="formitems.aSetQuantity" autocomplete="off"></el-input>
+                                </el-form-item>
+                                <el-form-item label="起標價格" :label-width="formLabelWidth">
+                                    <el-input v-model="formitems.itemPrice" autocomplete="off"></el-input>
+                                </el-form-item>
+                                <el-form-item label="一跳價格" :label-width="formLabelWidth">
+                                    <el-input v-model="formitems.addPrice1" autocomplete="off"></el-input>
+                                    <el-input v-model="formitems.addPrice2" autocomplete="off"></el-input>
+                                    <el-input v-model="formitems.addPrice3" autocomplete="off"></el-input>
+                                </el-form-item>
+                                <el-form-item label="商品描述" :label-width="formLabelWidth">
+                                    <el-input v-model="formitems.itemText" autocomplete="off"></el-input>
+                                </el-form-item>
+                            </el-form>
+                            <div slot="footer" class="dialog-footer">
+                                <button class="addsurebtn" type="primary" @click="addItem">確 定</button>
+                                <button class="addcancelbtn" @click="clearItemInput">取 消</button>
+                            </div>
+                        </el-dialog>
+                    </div>
+                </div>
+                <div class="col-sm-5 col-md-5 col-lg-5">
+                    <div class="rightupper">
+                        <div class="heightbox">
+                            <!-- 目前最高價 -->
+                            <el-table :data="tempheight" :show-header="false" empty-text="尚未有最高價" height="100%">
+                                <el-table-column>
+                                    <template slot-scope="scope">
+                                        <div class="heightmsg">
+                                            <p class="hightp">目前最高價: <span>&{ scope.row.name } : &{scope.row.heightprice}</span></p>
+                                        </div>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                        <div class="chatbox">
+                            <!-- 聊天視窗 -->
+                            <el-table :data="chatData" :show-header="false" ref="chattable" empty-text="暫無訊息"
+                                :row-style="tableRowStyle" height="100%">
+                                <el-table-column>
+                                    <template slot-scope="scope">
+                                        <div class="onemsg">
+                                            <span class="chatuser">@&{ scope.row.user }</span>
+                                            <i class="el-icon-time"></i>
+                                            <span class="chattime">&{ scope.row.timestamp| formatDate }</span>
+                                            <p>&{ scope.row.text }</p>
+                                        </div>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
+                    <div class="rightlower">
+                        <!-- 聊天輸入框 -->
+                        <el-input class="inputbox" placeholder="Type here..." v-model="msg" ref="input"
+                            @keyup.enter.native="sendMessage">
+                        </el-input>
+                        <!-- 傳送、清空btn -->
+                        <button class="sendbtn" type="primary" @click="sendMessage">發送</el-button>
+                            <button class="clearbtn" type="info" @click="clearInput">清空</el-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/seller_default.js"></script>
+    <!-- <script src="/static/js/seller_class.js"></script> -->
+    <script src="/static/js/seller.js"></script>
+    <script>
+        /*--- 伸縮版面上下 ---*/
+        $(document).ready(function () {
+            $("#flip").click(function () {
+                $("#panel").slideToggle("slow");
+            });
+        });
+
+        /*--- 圖示 ---*/
+        function myFunction(x) {
+            x.classList.toggle("change");
+        }
+    </script>
+</body>
+
+<style>
+    /* 桌電螢幕 */
+    @media only screen and (max-width: 1920px) and (min-width:1080px) {
+        .container-fluid {
+            background-color: #373737;
+            font-family: "微軟正黑體";
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        .title {
+            font-family: "微軟正黑體";
+        }
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 30px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 82vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 8vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 85vw;
+            margin-top: 5px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 1vw;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 5vh;
+            height: 50vh;
+        }
+
+        .leftupper {
+            margin-top: 2vh;
+        }
+
+        .leftmiddle {
+            margin-left: 33.5vw;
+            margin-top: 2vh;
+        }
+
+        /*------- left upper bottun(position) ---------*/
+        .startbtn {
+            margin-left: 70px;
+        }
+
+        .bidsuccess {
+            margin-right: 0px;
+        }
+
+        .bidfail {
+            margin-left: 10px;
+        }
+
+        .leftbottom {
+            font-size: 15px;
+            margin-top: 2vh;
+        }
+
+        .scttime {
+            margin-left: 10px;
+        }
+
+        /*------- left middle bottun(position) ---------*/
+        .resetbtn {
+            margin-left: 15px;
+        }
+
+        /*------- left 伸縮版面 ---------*/
+        #flip,
+        #panel {
+            padding: 5px;
+            text-align: left;
+        }
+
+        #panel {
+            padding: 5px;
+            display: none;
+            width: 8em;
+        }
+
+        /*----------left 圖示 -----------*/
+        .container {
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .bar1,
+        .bar2,
+        .bar3 {
+            width: 20px;
+            height: 2px;
+            background-color: #C0B283;
+            margin: 6px 0;
+            transition: 0.05s;
+        }
+
+        .change .bar1 {
+            -webkit-transform: rotate(-45deg) translate(-9px, 6px);
+            transform: rotate(-45deg) translate(-9px, 4px);
+        }
+
+        .change .bar2 {
+            opacity: 0;
+        }
+
+        .change .bar3 {
+            -webkit-transform: rotate(45deg) translate(-8px, -8px);
+            transform: rotate(45deg) translate(-8px, -5px);
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #f4f4f4 !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 6vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 25px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 76vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 15px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 27vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 25px;
+            margin-right: 40px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .sctitem,
+        .scttime {
+            width: 110px;
+        }
+
+        .startbtn {
+            width: 90px
+        }
+
+        .bidsuccess,
+        .bidfail {
+            width: 80px
+        }
+
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            height: 45px;
+            width: 80px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            width: 80px;
+        }
+
+        .addsurebtn,
+        .addcancelbtn {
+            width: 70px;
+        }
+
+        .tendsusbtn,
+        .tendfailbtn,
+        .failsurebidbtn,
+        .winsurebidbtn {
+            width: 70px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+
+        /* nullnullnullnullnullnullnull */
+
+        /* ------------leftupper button style---------- */
+        .sctitem,
+        .scttime {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn,
+        .bidsuccess,
+        .bidfail {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn:before,
+        .bidsuccess:before,
+        .bidfail:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .startbtn:hover:before,
+        .bidsuccess:hover:before,
+        .bidfail:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .stopbtn:before,
+        .resetbtn:before,
+        .continuebtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .stopbtn:hover:before,
+        .resetbtn:hover:before,
+        .continuebtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------flip button style---------- */
+        .addbtn,
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addbtn:before,
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addbtn:hover:before,
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+        .addsurebtn,
+        .addcancelbtn,
+        .failsurebidbtn,
+        .winsurebidbtn,
+        .tendsusbtn,
+        .tendfailbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addsurebtn:before,
+        .addcancelbtn:before,
+        .failsurebidbtn:before,
+        .winsurebidbtn:before,
+        .tendsusbtn:before,
+        .tendfailbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addsurebtn:hover:before,
+        .addcancelbtn:hover:before,
+        .failsurebidbtn:hover:before,
+        .winsurebidbtn:hover:before,
+        .tendsusbtn:hover:before,
+        .tendfailbtn:hover:before {
+            left: 100px;
+        }
+
+    }
+
+     /*筆電 */
+     @media only screen and (max-width: 1440px) and (min-width: 900px) {
+        .container-fluid {
+            background-color: #373737;
+            font-family: "微軟正黑體";
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        .title {
+            font-family: "微軟正黑體";
+        }
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 25px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 82vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 8vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 82vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 1vw;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 5vh;
+            height: 50vh;
+        }
+
+        .leftupper {
+            margin-top: 2vh;
+        }
+
+        .leftmiddle {
+            margin-left: 31vw;
+            margin-top: 2vh;
+        }
+
+        /*------- left upper bottun(position) ---------*/
+        .startbtn {
+            margin-left: 15px;
+        }
+
+        .bidsuccess {
+            margin-right: 0px;
+        }
+
+        .bidfail {
+            margin-left: 15px;
+        }
+
+        .leftbottom {
+            font-size: 15px;
+            margin-top: 2vh;
+        }
+
+        .scttime {
+            margin-left: 10px;
+        }
+
+        /*------- left middle bottun(position) ---------*/
+        .resetbtn {
+            margin-left: 15px;
+        }
+
+        /*------- left 伸縮版面 ---------*/
+        #flip,
+        #panel {
+            padding: 5px;
+            text-align: left;
+        }
+
+        #panel {
+            padding: 5px;
+            display: none;
+            width: 8em;
+        }
+
+        /*----------left 圖示 -----------*/
+        .container {
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .bar1,
+        .bar2,
+        .bar3 {
+            width: 20px;
+            height: 2px;
+            background-color: #C0B283;
+            margin: 6px 0;
+            transition: 0.05s;
+        }
+
+        .change .bar1 {
+            -webkit-transform: rotate(-45deg) translate(-9px, 6px);
+            transform: rotate(-45deg) translate(-9px, 4px);
+        }
+
+        .change .bar2 {
+            opacity: 0;
+        }
+
+        .change .bar3 {
+            -webkit-transform: rotate(45deg) translate(-8px, -8px);
+            transform: rotate(45deg) translate(-8px, -5px);
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #f4f4f4 !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 6vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 25px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 76vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 15px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 23vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 10px;
+            margin-right: 5px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .sctitem,
+        .scttime {
+            width: 110px;
+        }
+
+        .startbtn {
+            width: 90px
+        }
+
+        .bidsuccess,
+        .bidfail {
+            width: 80px
+        }
+
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            height: 45px;
+            width: 80px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            width: 80px;
+        }
+
+        .addsurebtn,
+        .addcancelbtn {
+            width: 70px;
+        }
+
+        .tendsusbtn,
+        .tendfailbtn,
+        .failsurebidbtn,
+        .winsurebidbtn {
+            width: 70px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+
+        /* nullnullnullnullnullnullnull */
+
+        /* ------------leftupper button style---------- */
+        .sctitem,
+        .scttime {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn,
+        .bidsuccess,
+        .bidfail {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn:before,
+        .bidsuccess:before,
+        .bidfail:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .startbtn:hover:before,
+        .bidsuccess:hover:before,
+        .bidfail:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .stopbtn:before,
+        .resetbtn:before,
+        .continuebtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .stopbtn:hover:before,
+        .resetbtn:hover:before,
+        .continuebtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------flip button style---------- */
+        .addbtn,
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addbtn:before,
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addbtn:hover:before,
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+        .addsurebtn,
+        .addcancelbtn,
+        .failsurebidbtn,
+        .winsurebidbtn,
+        .tendsusbtn,
+        .tendfailbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addsurebtn:before,
+        .addcancelbtn:before,
+        .failsurebidbtn:before,
+        .winsurebidbtn:before,
+        .tendsusbtn:before,
+        .tendfailbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addsurebtn:hover:before,
+        .addcancelbtn:hover:before,
+        .failsurebidbtn:hover:before,
+        .winsurebidbtn:hover:before,
+        .tendsusbtn:hover:before,
+        .tendfailbtn:hover:before {
+            left: 100px;
+        }
+
+    }
+
+    /*筆電 */
+    @media only screen and (max-width: 1280px) and (min-width: 800px) {
+        .container-fluid {
+            background-color: #373737;
+            font-family: "微軟正黑體";
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        .title {
+            font-family: "微軟正黑體";
+        }
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 25px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 82vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 8vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 82vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 1vw;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 5vh;
+            height: 50vh;
+        }
+
+        .leftupper {
+            margin-top: 2vh;
+        }
+
+        .leftmiddle {
+            margin-left: 31vw;
+            margin-top: 2vh;
+        }
+
+        /*------- left upper bottun(position) ---------*/
+        .startbtn {
+            margin-left: 15px;
+        }
+
+        .bidsuccess {
+            margin-right: 0px;
+        }
+
+        .bidfail {
+            margin-left: 15px;
+        }
+
+        .leftbottom {
+            font-size: 15px;
+            margin-top: 2vh;
+        }
+
+        .scttime {
+            margin-left: 10px;
+        }
+
+        /*------- left middle bottun(position) ---------*/
+        .resetbtn {
+            margin-left: 15px;
+        }
+
+        /*------- left 伸縮版面 ---------*/
+        #flip,
+        #panel {
+            padding: 5px;
+            text-align: left;
+        }
+
+        #panel {
+            padding: 5px;
+            display: none;
+            width: 8em;
+        }
+
+        /*----------left 圖示 -----------*/
+        .container {
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .bar1,
+        .bar2,
+        .bar3 {
+            width: 20px;
+            height: 2px;
+            background-color: #C0B283;
+            margin: 6px 0;
+            transition: 0.05s;
+        }
+
+        .change .bar1 {
+            -webkit-transform: rotate(-45deg) translate(-9px, 6px);
+            transform: rotate(-45deg) translate(-9px, 4px);
+        }
+
+        .change .bar2 {
+            opacity: 0;
+        }
+
+        .change .bar3 {
+            -webkit-transform: rotate(45deg) translate(-8px, -8px);
+            transform: rotate(45deg) translate(-8px, -5px);
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #f4f4f4 !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 6vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 25px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 76vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 15px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 23vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 10px;
+            margin-right: 5px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .sctitem,
+        .scttime {
+            width: 110px;
+        }
+
+        .startbtn {
+            width: 90px
+        }
+
+        .bidsuccess,
+        .bidfail {
+            width: 80px
+        }
+
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            height: 45px;
+            width: 80px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            width: 80px;
+        }
+
+        .addsurebtn,
+        .addcancelbtn {
+            width: 70px;
+        }
+
+        .tendsusbtn,
+        .tendfailbtn,
+        .failsurebidbtn,
+        .winsurebidbtn {
+            width: 70px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+
+        /* nullnullnullnullnullnullnull */
+
+        /* ------------leftupper button style---------- */
+        .sctitem,
+        .scttime {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn,
+        .bidsuccess,
+        .bidfail {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn:before,
+        .bidsuccess:before,
+        .bidfail:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .startbtn:hover:before,
+        .bidsuccess:hover:before,
+        .bidfail:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .stopbtn:before,
+        .resetbtn:before,
+        .continuebtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .stopbtn:hover:before,
+        .resetbtn:hover:before,
+        .continuebtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------flip button style---------- */
+        .addbtn,
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addbtn:before,
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addbtn:hover:before,
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+        .addsurebtn,
+        .addcancelbtn,
+        .failsurebidbtn,
+        .winsurebidbtn,
+        .tendsusbtn,
+        .tendfailbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 16px;
+            padding: 10px;
+            /*btn內上下*/
+            font-family: "微軟正黑體";
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addsurebtn:before,
+        .addcancelbtn:before,
+        .failsurebidbtn:before,
+        .winsurebidbtn:before,
+        .tendsusbtn:before,
+        .tendfailbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addsurebtn:hover:before,
+        .addcancelbtn:hover:before,
+        .failsurebidbtn:hover:before,
+        .winsurebidbtn:hover:before,
+        .tendsusbtn:hover:before,
+        .tendfailbtn:hover:before {
+            left: 100px;
+        }
+
+    }
+
+    /* iPad */
+    @media only screen and (max-width: 1024px) and (min-width:768px) {
+        .container-fluid {
+            background-color: #373737;
+            /* font-family: "微軟正黑體"; */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        /* .title {
+            font-family: "微軟正黑體";
+        } */
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 25px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 84vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 6vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 80vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 2px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 1vh;
+            height: 50vh;
+        }
+
+        .leftupper {
+            margin-top: 1vh;
+        }
+
+        .leftmiddle {
+            margin-left: 330px;
+            margin-top: 1vh;
+        }
+
+        /*------- left upper bottun(position) ---------*/
+        .startbtn {
+            margin-left: 3px;
+        }
+
+        .bidsuccess {
+            margin-left: 2px;
+        }
+
+        .bidfail {
+            margin-left: 15px;
+        }
+
+        .scttime {
+            margin-left: 5px;
+        }
+
+        /*------- left middle bottun(position) ---------*/
+        .resetbtn {
+            margin-left: 3px;
+        }
+
+        .leftbottom {
+            font-size: 10px;
+            margin-top: 1vh;
+        }
+
+        /*------- left 伸縮版面 ---------*/
+        #flip,
+        #panel {
+            padding: 5px;
+            text-align: left;
+        }
+
+        #panel {
+            padding: 5px;
+            display: none;
+            width: 8em;
+        }
+
+        /*----------left 圖示 -----------*/
+        .container {
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .bar1,
+        .bar2,
+        .bar3 {
+            width: 20px;
+            height: 2px;
+            background-color: #C0B283;
+            margin: 6px 0;
+            transition: 0.05s;
+        }
+
+        .change .bar1 {
+            -webkit-transform: rotate(-45deg) translate(-9px, 6px);
+            transform: rotate(-45deg) translate(-9px, 4px);
+        }
+
+        .change .bar2 {
+            opacity: 0;
+        }
+
+        .change .bar3 {
+            -webkit-transform: rotate(45deg) translate(-8px, -8px);
+            transform: rotate(45deg) translate(-8px, -5px);
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #f4f4f4 !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 10vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 15px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 75vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 10px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 21vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 15px;
+            margin-right: 8px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .sctitem,
+        .scttime {
+            width: 90px;
+            height: 40px;
+        }
+
+        .startbtn {
+            height: 40px;
+            width: 70px;
+        }
+
+        .bidsuccess,
+        .bidfail {
+            height: 40px;
+            width: 70px;
+        }
+
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            height: 40px;
+            width: 70px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            height: 40px;
+            width: 70px;
+        }
+
+        .addsurebtn,
+        .addcancelbtn {
+            height: 35px;
+            width: 60px;
+        }
+
+        .tendsusbtn,
+        .tendfailbtn,
+        .failsurebidbtn,
+        .winsurebidbtn {
+            height: 35px;
+            width: 60px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+
+        /* nullnullnullnullnullnullnull */
+
+        /* ------------leftupper button style---------- */
+        .sctitem,
+        .scttime {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 10px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn,
+        .bidsuccess,
+        .bidfail {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 15px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn:before,
+        .bidsuccess:before,
+        .bidfail:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .startbtn:hover:before,
+        .bidsuccess:hover:before,
+        .bidfail:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 15px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .stopbtn:before,
+        .resetbtn:before,
+        .continuebtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .stopbtn:hover:before,
+        .resetbtn:hover:before,
+        .continuebtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 15px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------flip button style---------- */
+        .addbtn,
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 15px;
+            padding: 8px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addbtn:before,
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addbtn:hover:before,
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+        .addsurebtn,
+        .addcancelbtn,
+        .failsurebidbtn,
+        .winsurebidbtn,
+        .tendsusbtn,
+        .tendfailbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addsurebtn:before,
+        .addcancelbtn:before,
+        .failsurebidbtn:before,
+        .winsurebidbtn:before,
+        .tendsusbtn:before,
+        .tendfailbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addsurebtn:hover:before,
+        .addcancelbtn:hover:before,
+        .failsurebidbtn:hover:before,
+        .winsurebidbtn:hover:before,
+        .tendsusbtn:hover:before,
+        .tendfailbtn:hover:before {
+            left: 100px;
+        }
+
+    }
+
+    /* iPhone X*/
+    @media only screen and (max-width: 817px) and (min-width:375px) {
+        .container-fluid {
+            background-color: #373737;
+            /* font-family: "微軟正黑體"; */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        /* .title {
+            font-family: "微軟正黑體";
+        } */
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 15px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 78vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 12vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 83vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 2px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 1vh;
+            height: 50vh;
+        }
+
+        .leftupper {
+            margin-top: 1vh;
+        }
+
+        .leftmiddle {
+            margin-left: 270px;
+            margin-top: 1vh;
+        }
+
+        /*------- left upper bottun(position) ---------*/
+        .startbtn {
+            margin-left: 15px;
+        }
+
+        .bidsuccess {
+            margin-left: 0px;
+        }
+
+        .bidfail {
+            margin-left: 4px;
+        }
+
+        .scttime {
+            margin-left: 5px;
+        }
+
+        /*------- left middle bottun(position) ---------*/
+        .resetbtn {
+            margin-left: 3px;
+        }
+
+        .leftbottom {
+            font-size: 10px;
+            margin-top: 1vh;
+        }
+
+        /*------- left 伸縮版面 ---------*/
+        #flip,
+        #panel {
+            padding: 5px;
+            text-align: left;
+        }
+
+        #panel {
+            padding: 5px;
+            display: none;
+            width: 8em;
+        }
+
+        /*----------left 圖示 -----------*/
+        .container {
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .bar1,
+        .bar2,
+        .bar3 {
+            width: 20px;
+            height: 2px;
+            background-color: #C0B283;
+            margin: 6px 0;
+            transition: 0.05s;
+        }
+
+        .change .bar1 {
+            -webkit-transform: rotate(-45deg) translate(-9px, 6px);
+            transform: rotate(-45deg) translate(-9px, 4px);
+        }
+
+        .change .bar2 {
+            opacity: 0;
+        }
+
+        .change .bar3 {
+            -webkit-transform: rotate(45deg) translate(-8px, -8px);
+            transform: rotate(45deg) translate(-8px, -5px);
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #f4f4f4 !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 10vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 15px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 68vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 10px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 22vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 15px;
+            margin-right: 10px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .sctitem,
+        .scttime {
+            width: 80px;
+            height: 30px;
+        }
+
+        .startbtn {
+            width: 55px;
+            height: 30px;
+        }
+
+        .bidsuccess,
+        .bidfail {
+            height: 30px;
+            width: 40px;
+        }
+
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            height: 30px;
+            width: 40px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            height: 35px;
+            width: 45px;
+        }
+
+        .addsurebtn,
+        .addcancelbtn {
+            height: 35px;
+            width: 60px;
+        }
+
+        .tendsusbtn,
+        .tendfailbtn,
+        .failsurebidbtn,
+        .winsurebidbtn {
+            height: 35px;
+            width: 60px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+
+        /* nullnullnullnullnullnullnull */
+
+        /* ------------leftupper button style---------- */
+        .sctitem,
+        .scttime {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn,
+        .bidsuccess,
+        .bidfail {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn:before,
+        .bidsuccess:before,
+        .bidfail:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .startbtn:hover:before,
+        .bidsuccess:hover:before,
+        .bidfail:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .stopbtn:before,
+        .resetbtn:before,
+        .continuebtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .stopbtn:hover:before,
+        .resetbtn:hover:before,
+        .continuebtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------flip button style---------- */
+        .addbtn,
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 8px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addbtn:before,
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addbtn:hover:before,
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+        .addsurebtn,
+        .addcancelbtn,
+        .failsurebidbtn,
+        .winsurebidbtn,
+        .tendsusbtn,
+        .tendfailbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addsurebtn:before,
+        .addcancelbtn:before,
+        .failsurebidbtn:before,
+        .winsurebidbtn:before,
+        .tendsusbtn:before,
+        .tendfailbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addsurebtn:hover:before,
+        .addcancelbtn:hover:before,
+        .failsurebidbtn:hover:before,
+        .winsurebidbtn:hover:before,
+        .tendsusbtn:hover:before,
+        .tendfailbtn:hover:before {
+            left: 100px;
+        }
+
+    }
+
+    /* i6/6s/7/8 pluse*/
+    @media only screen and (max-width: 737px) and (min-width:419px) {
+        .container-fluid {
+            background-color: #373737;
+            /* font-family: "微軟正黑體"; */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        /* .title {
+            font-family: "微軟正黑體";
+        } */
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 15px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 78vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 12vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 76vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 2px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 1vh;
+            height: 50vh;
+        }
+
+        .leftupper {
+            margin-top: 1vh;
+        }
+
+        .leftmiddle {
+            margin-left: 219.5px;
+            margin-top: 1vh;
+        }
+
+        /*------- left upper bottun(position) ---------*/
+        .startbtn {
+            margin-left: 0px;
+        }
+
+        .bidsuccess {
+            margin-left: 0px;
+        }
+
+        .bidfail {
+            margin-left: 0px;
+        }
+
+        .scttime {
+            margin-left: 0px;
+        }
+
+        /*------- left middle bottun(position) ---------*/
+        .resetbtn {
+            margin-left: 0px;
+        }
+
+        .leftbottom {
+            font-size: 1px;
+            margin-top: 1vh;
+        }
+
+        /*------- left 伸縮版面 ---------*/
+        #flip,
+        #panel {
+            padding: 5px;
+            text-align: left;
+        }
+
+        #panel {
+            padding: 5px;
+            display: none;
+            width: 8em;
+        }
+
+        /*----------left 圖示 -----------*/
+        .container {
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .bar1,
+        .bar2,
+        .bar3 {
+            width: 20px;
+            height: 2px;
+            background-color: #C0B283;
+            margin: 6px 0;
+            transition: 0.05s;
+        }
+
+        .change .bar1 {
+            -webkit-transform: rotate(-45deg) translate(-9px, 6px);
+            transform: rotate(-45deg) translate(-9px, 4px);
+        }
+
+        .change .bar2 {
+            opacity: 0;
+        }
+
+        .change .bar3 {
+            -webkit-transform: rotate(45deg) translate(-8px, -8px);
+            transform: rotate(45deg) translate(-8px, -5px);
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #f4f4f4 !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 10vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 15px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 68vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 10px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 22vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 7px;
+            margin-right: 10px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .sctitem,
+        .scttime {
+            width: 58px;
+            height: 30px;
+        }
+
+        .startbtn {
+            width: 55px;
+            height: 30px;
+        }
+
+        .bidsuccess,
+        .bidfail {
+            height: 30px;
+            width: 40px;
+        }
+
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            height: 30px;
+            width: 40px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            height: 30px;
+            width: 40px;
+        }
+
+        .addsurebtn,
+        .addcancelbtn {
+            height: 35px;
+            width: 60px;
+        }
+
+        .tendsusbtn,
+        .tendfailbtn,
+        .failsurebidbtn,
+        .winsurebidbtn {
+            height: 35px;
+            width: 60px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+
+        /* nullnullnullnullnullnullnull */
+
+        /* ------------leftupper button style---------- */
+        .sctitem,
+        .scttime {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn,
+        .bidsuccess,
+        .bidfail {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn:before,
+        .bidsuccess:before,
+        .bidfail:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .startbtn:hover:before,
+        .bidsuccess:hover:before,
+        .bidfail:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .stopbtn:before,
+        .resetbtn:before,
+        .continuebtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .stopbtn:hover:before,
+        .resetbtn:hover:before,
+        .continuebtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------flip button style---------- */
+        .addbtn,
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 8px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addbtn:before,
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addbtn:hover:before,
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+        .addsurebtn,
+        .addcancelbtn,
+        .failsurebidbtn,
+        .winsurebidbtn,
+        .tendsusbtn,
+        .tendfailbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addsurebtn:before,
+        .addcancelbtn:before,
+        .failsurebidbtn:before,
+        .winsurebidbtn:before,
+        .tendsusbtn:before,
+        .tendfailbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addsurebtn:hover:before,
+        .addcancelbtn:hover:before,
+        .failsurebidbtn:hover:before,
+        .winsurebidbtn:hover:before,
+        .tendsusbtn:hover:before,
+        .tendfailbtn:hover:before {
+            left: 100px;
+        }
+
+    }
+
+    /* i6/6s/7/8 */
+    @media only screen and (max-width: 672px) and (min-width:380px) {
+        .container-fluid {
+            background-color: #373737;
+            /* font-family: "微軟正黑體"; */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        /* .title {
+            font-family: "微軟正黑體";
+        } */
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 15px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 78vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 12vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 76vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 2px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 1vh;
+            height: 50vh;
+        }
+
+        .leftupper {
+            margin-top: 1vh;
+        }
+
+        .leftmiddle {
+            margin-left: 219.5px;
+            margin-top: 1vh;
+        }
+
+        /*------- left upper bottun(position) ---------*/
+        .startbtn {
+            margin-left: 5px;
+        }
+
+        .bidsuccess {
+            margin-left: 0px;
+        }
+
+        .bidfail {
+            margin-left: 0px;
+        }
+
+        .scttime {
+            margin-left: 5px;
+        }
+
+        /*------- left middle bottun(position) ---------*/
+        .resetbtn {
+            margin-left: 0px;
+        }
+
+        .leftbottom {
+            font-size: 10px;
+            margin-top: 1vh;
+        }
+
+        /*------- left 伸縮版面 ---------*/
+        #flip,
+        #panel {
+            padding: 5px;
+            text-align: left;
+        }
+
+        #panel {
+            padding: 5px;
+            display: none;
+            width: 8em;
+        }
+
+        /*----------left 圖示 -----------*/
+        .container {
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .bar1,
+        .bar2,
+        .bar3 {
+            width: 20px;
+            height: 2px;
+            background-color: #C0B283;
+            margin: 6px 0;
+            transition: 0.05s;
+        }
+
+        .change .bar1 {
+            -webkit-transform: rotate(-45deg) translate(-9px, 6px);
+            transform: rotate(-45deg) translate(-9px, 4px);
+        }
+
+        .change .bar2 {
+            opacity: 0;
+        }
+
+        .change .bar3 {
+            -webkit-transform: rotate(45deg) translate(-8px, -8px);
+            transform: rotate(45deg) translate(-8px, -5px);
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #f4f4f4 !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 10vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 15px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 68vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 10px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 22vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 7px;
+            margin-right: 7px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .sctitem,
+        .scttime {
+            width: 60px;
+            height: 30px;
+        }
+
+        .startbtn {
+            width: 55px;
+            height: 30px;
+        }
+
+        .bidsuccess,
+        .bidfail {
+            height: 30px;
+            width: 30px;
+        }
+
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            height: 30px;
+            width: 40px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            height: 30px;
+            width: 40px;
+        }
+
+        .addsurebtn,
+        .addcancelbtn {
+            height: 35px;
+            width: 60px;
+        }
+
+        .tendsusbtn,
+        .tendfailbtn,
+        .failsurebidbtn,
+        .winsurebidbtn {
+            height: 35px;
+            width: 60px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+
+        /* nullnullnullnullnullnullnull */
+
+        /* ------------leftupper button style---------- */
+        .sctitem,
+        .scttime {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn,
+        .bidsuccess,
+        .bidfail {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn:before,
+        .bidsuccess:before,
+        .bidfail:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .startbtn:hover:before,
+        .bidsuccess:hover:before,
+        .bidfail:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .stopbtn:before,
+        .resetbtn:before,
+        .continuebtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .stopbtn:hover:before,
+        .resetbtn:hover:before,
+        .continuebtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------flip button style---------- */
+        .addbtn,
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 8px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addbtn:before,
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addbtn:hover:before,
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+        .addsurebtn,
+        .addcancelbtn,
+        .failsurebidbtn,
+        .winsurebidbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addsurebtn:before,
+        .addcancelbtn:before,
+        .failsurebidbtn:before,
+        .winsurebidbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addsurebtn:hover:before,
+        .addcancelbtn:hover:before,
+        .failsurebidbtn:hover:before,
+        .winsurebidbtn:hover:before {
+            left: 100px;
+        }
+
+    }
+
+    /* S7 */
+    @media only screen and (max-width: 645px) and (min-width:360px) {
+        html {
+            background-color: #373737;
+        }
+
+        .container-fluid {
+            background-color: #373737;
+            /* font-family: "微軟正黑體"; */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /*------------------title 字體--------------------*/
+        /* .title {
+            font-family: "微軟正黑體";
+        } */
+
+        /*--------------------- 框架 ---------------------*/
+        .header {
+            font-size: 15px;
+            height: 6vh;
+            color: #c0b283;
+        }
+
+        .left {
+            height: 94vh;
+            background-color: #373737;
+        }
+
+        .rightupper {
+            height: 78vh;
+            background-color: #373737;
+        }
+
+        .rightlower {
+            margin-top: 2vh;
+            height: 12vh;
+            margin-bottom: 2vh;
+            background-color: #373737;
+        }
+
+        /* ---------------------框架-------------------- */
+        /* ------------border---------- */
+        .left {
+            /* border */
+            border-top-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        .rightlower {
+            /*border*/
+            border-bottom-style: solid;
+            border-width: 1px;
+            border-color: #C0B283;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* ---------------------header(元素)-------------------- */
+        .el-icon-caret-left {
+            text-align: left;
+        }
+
+        .headername {
+            margin-left: 76vw;
+            margin-top: 3px;
+        }
+
+        .el-icon-user,
+        .el-icon-setting,
+        .el-icon-shopping-bag-2 {
+            margin-left: 2px;
+        }
+
+        .el-icon-user:hover,
+        .el-icon-setting:hover,
+        .el-icon-shopping-bag-2:hover {
+            color: #a67f78;
+        }
+
+        /* ---------------------left-------------------- */
+        .vedio {
+            margin-top: 1vh;
+            height: 50vh;
+        }
+
+        .leftupper {
+            margin-top: 1vh;
+        }
+
+        .leftmiddle {
+            margin-left: 219.5px;
+            margin-top: 1vh;
+        }
+
+        /*------- left upper bottun(position) ---------*/
+        .startbtn {
+            margin-left: 0px;
+        }
+
+        .bidsuccess {
+            margin-left: -10px;
+        }
+
+        .bidfail {
+            margin-left: 0px;
+        }
+
+        .scttime {
+            margin-left: 0px;
+        }
+
+        /*------- left middle bottun(position) ---------*/
+        .resetbtn {
+            margin-left: 0px;
+        }
+
+        .leftbottom {
+            font-size: 10px;
+            margin-top: 1vh;
+        }
+
+        /*------- left 伸縮版面 ---------*/
+        #flip,
+        #panel {
+            padding: 5px;
+            text-align: left;
+        }
+
+        #panel {
+            padding: 5px;
+            display: none;
+            width: 8em;
+        }
+
+        /*----------left 圖示 -----------*/
+        .container {
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .bar1,
+        .bar2,
+        .bar3 {
+            width: 20px;
+            height: 2px;
+            background-color: #C0B283;
+            margin: 6px 0;
+            transition: 0.05s;
+        }
+
+        .change .bar1 {
+            -webkit-transform: rotate(-45deg) translate(-9px, 6px);
+            transform: rotate(-45deg) translate(-9px, 4px);
+        }
+
+        .change .bar2 {
+            opacity: 0;
+        }
+
+        .change .bar3 {
+            -webkit-transform: rotate(45deg) translate(-8px, -8px);
+            transform: rotate(45deg) translate(-8px, -5px);
+        }
+
+        /* ---------------------rightupper-------------------- */
+
+        /* 每則聊天訊息間沒有邊框 */
+        td {
+            border: none !important;
+        }
+
+        /* 滑鼠移到聊天訊息改變的顏色 */
+        td:hover {
+            background: #f4f4f4 !important;
+        }
+
+        /* 最高價高度 */
+        .heightbox {
+            height: 10vh;
+        }
+
+        .heightmsg {
+            height: 5vh;
+            font-size: 15px;
+        }
+
+        .hightp {
+            color: #EB8F91;
+        }
+
+        /* 訊息table高度 */
+        .chatbox {
+            height: 68vh;
+        }
+
+        /* 每則訊息高度 */
+        .onemsg {
+            height: 44px;
+        }
+
+        /* 訊息中個元素大小 */
+        .chatuser,
+        .el-icon-time,
+        .chattime {
+            font-size: 10px;
+        }
+
+        /* 訊息中個元素位置調整 */
+        .el-icon-time {
+            margin-left: 15px;
+        }
+
+        /* ---------------------rightlower-------------------- */
+        /* 輸入框寬度 */
+        .inputbox {
+            width: 20vw;
+        }
+
+        /* 傳送btn位置調整 */
+        .sendbtn {
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+
+        /* ---------------------button size-------------------- */
+        .sctitem,
+        .scttime {
+            width: 60px;
+            height: 30px;
+        }
+
+        .startbtn {
+            width: 55px;
+            height: 30px;
+        }
+
+        .bidsuccess,
+        .bidfail {
+            height: 30px;
+            width: 30px;
+        }
+
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            height: 30px;
+            width: 40px;
+        }
+
+        .sendbtn,
+        .clearbtn {
+            height: 30px;
+            width: 40px;
+        }
+
+        .addsurebtn,
+        .addcancelbtn {
+            height: 35px;
+            width: 60px;
+        }
+
+        .tendsusbtn,
+        .tendfailbtn,
+        .failsurebidbtn,
+        .winsurebidbtn {
+            height: 35px;
+            width: 60px;
+        }
+
+        /* ---------------------button style-------------------- */
+        /* ------------header button style---------- */
+
+        /* nullnullnullnullnullnullnull */
+
+        /* ------------leftupper button style---------- */
+        .sctitem,
+        .scttime {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn,
+        .bidsuccess,
+        .bidfail {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .startbtn:before,
+        .bidsuccess:before,
+        .bidfail:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .startbtn:hover:before,
+        .bidsuccess:hover:before,
+        .bidfail:hover:before {
+            left: 100px;
+        }
+
+        /* ------------leftmiddle button style---------- */
+        .stopbtn,
+        .resetbtn,
+        .continuebtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .stopbtn:before,
+        .resetbtn:before,
+        .continuebtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .stopbtn:hover:before,
+        .resetbtn:hover:before,
+        .continuebtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------rightbottom button style---------- */
+        .sendbtn,
+        .clearbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .sendbtn:before,
+        .clearbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .sendbtn:hover:before,
+        .clearbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------flip button style---------- */
+        .addbtn,
+        .infobtn,
+        .bidpostbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 8px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addbtn:before,
+        .infobtn:before,
+        .bidpostbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addbtn:hover:before,
+        .infobtn:hover:before,
+        .bidpostbtn:hover:before {
+            left: 100px;
+        }
+
+        /* ------------another button style---------- */
+        .addsurebtn,
+        .addcancelbtn,
+        .failsurebidbtn,
+        .winsurebidbtn,
+        .tendsusbtn,
+        .tendfailbtn {
+            position: relative;
+            text-align: center;
+            border-radius: 1.3em;
+            border: 0.5px;
+            border-style: solid;
+            background: #373737;
+            color: #C0B283;
+            font-size: 10px;
+            padding: 2px;
+            /*btn內上下*/
+            /* font-family: "微軟正黑體"; */
+            overflow: hidden;
+            -webkit-transition: all 0.15s ease-in;
+            transition: all 0.15s ease-in
+        }
+
+        .addsurebtn:before,
+        .addcancelbtn:before,
+        .failsurebidbtn:before,
+        .winsurebidbtn:before,
+        .tendsusbtn:before,
+        .tendfailbtn:before {
+            content: ' ';
+            position: absolute;
+            background: #fff;
+            width: 20px;
+            height: 130px;
+            top: 0;
+            left: -45px;
+            opacity: 0.3;
+            -webkit-transition: all 0.25s ease-out;
+            transition: all 0.25s ease-out;
+            -webkit-transform: skewX(-25deg);
+            transform: skewX(-25deg);
+        }
+
+        .addsurebtn:hover:before,
+        .addcancelbtn:hover:before,
+        .failsurebidbtn:hover:before,
+        .winsurebidbtn:hover:before,
+        .tendsusbtn:hover:before,
+        .tendfailbtn:hover:before {
+            left: 100px;
+        }
+
+    }
+</style>
+
+</html>

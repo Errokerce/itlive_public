@@ -1,0 +1,172 @@
+@charset "utf-8";
+* {
+  box-sizing: border-box;
+}
+html{
+	background-color:#373737;
+	font-family: "微軟正黑體";
+}
+
+h1{
+	text-align: center;
+	color: #C0B283;
+	margin-top: 2rem;
+	font-size: 36px;	
+}
+
+p{
+	color: #C0B283;
+	font-size: 18px;
+	font-family: "微軟正黑體";
+}
+
+input,textarea{
+	background-color: #F4F4F4;
+	border: none;	
+	border-radius: 20px;
+	font-family: "微軟正黑體";
+}
+textarea{
+	padding: 10px 0 0 15px;
+	width: 11rem;
+}
+
+input{
+	height: 2em;
+	padding-left: 15px;
+	width: 6rem;
+}
+td{
+	color: #f4f4f4;
+	font-family: "微軟正黑體";
+	font-size: 14px;
+}
+
+/*---------- btn-----------*/
+
+.button,.strbutton {
+ border: none;
+ display: block;
+ position: relative;
+ background: #C0B283;
+ color: #fff;
+ width: 80px;/*80px*/
+ height: 40px;/*button height*//*40px*/
+ line-height: 30px;/*字體位置*/
+ text-align: center;
+ font-family: "微軟正黑體";
+ font-size: 16px;
+ font-weight: bold;
+ text-decoration: none;
+ border-radius: 1.5em;
+ overflow: hidden;
+ -webkit-transition: all 0.15s ease-in;
+ transition: all 0.15s ease-in;
+} 
+.btnform{
+	margin-top: 3rem;
+}
+.button{
+	margin: 0 auto 0; /*自動浮動position*/
+}
+.strbutton{
+	margin: 1rem auto 0; /*自動浮動position*/
+}
+.button:before,.strbutton:before {
+ content: ' ';
+ position: absolute;
+ background: #fff;
+ width: 25px;
+ height: 50px;
+ top: 0;
+ left: -45px;
+ opacity: 0.3;
+ -webkit-transition: all 0.25s ease-out;
+ transition: all 0.25s ease-out;
+ -webkit-transform: skewX(-25deg);
+         transform: skewX(-25deg);
+}   
+
+.button:hover:before,.strbutton:hover:before {
+ left: 100px;
+}             
+/*----------------- tab-inner ---------------*/
+
+.tab-inner{
+	text-align: center;
+}
+.row:after{
+	content: "";
+  	display: table;
+  	clear: both;
+}
+.left,.right{
+	float:left;
+	width: 50%;
+	height: 13.5rem;
+}
+.left{
+	text-align: right;
+}
+.right{
+	text-align: left;
+}
+/* Responsive layout - makes a two column-layout instead of four columns */
+@media screen and (max-width: 900px) {
+  .left,.right  {
+    width: 50%;
+	text-align: center;
+  }
+}
+
+/* Responsive layout - makes the two columns stack on top of each other instead of next to each other */
+@media screen and (max-width: 600px) {
+  .left,.right  {
+    width: 100%;
+  }
+}
+/*---p---*/
+.pprice{
+	padding-left: 2rem;
+}
+
+.discribe{
+	padding-right: 6rem;
+}
+
+/*----- iphone 6/7/8 -----*/
+@media screen and (max-width: 375px){
+	.buynu{
+		margin-right: 1rem;
+	}
+	.pprice{
+		margin-right: 1rem;
+	}
+}
+
+/*----- iphone 6/7/8 plus -----*/
+@media screen and (max-width: 414px){
+	.buynu{
+		margin-right: 1rem;
+	}
+	.pprice{
+		margin-right: 1rem;
+	}
+}
+
+/*----- S7 -----*/
+@media screen and (max-width: 360px){
+	.price{
+		width: 5rem;
+	}
+}
+
+
+
+
+
+
+
+
+
+

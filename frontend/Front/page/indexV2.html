@@ -1,0 +1,112 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>BroadCast Buy</title>
+
+<link href="/static/css/indexV2.css" rel="stylesheet" type="text/css">	
+
+
+<!------ Navigation----->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+	<!------icon bar------>
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+
+</head>
+
+
+	
+	
+	
+<header>
+	<!------------NavigationBar-------------->
+<section id="nav-bar">
+<nav class="navbar navbar-expand-lg navbar-light">
+  	<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    	<span class="navbar-toggler-icon"></span>
+  	</button>
+	
+  <div class="collapse navbar-collapse" id="navbarNav">
+    <ul class="navbar-nav ml-auto">
+      	<li class="nav-item">
+        	<a class="nav-link" href="#top"><i class="fas fa-home"></i> HOME</a>
+      	</li>	
+      	<li class="nav-item">
+       		<a class="nav-link" href="#" onclick="document.getElementById('aboutbtn').style.display='block'"><i class="fas fa-info-circle"></i> ABOUT</a>
+		</li>
+      	<li class="nav-item">
+        	<a class="nav-link" href="#" onclick="document.getElementById('contbtn').style.display='block'"><i class="fas fa-envelope"></i> CONTACT</a>
+      	</li>
+		<li class="nav-item">
+        	<a class="nav-link" href="https://api.itlive.nctu.me/login/GoogleLogin"><i class="fas fa-user"></i> LOGIN</a>
+      	</li>	
+    </ul> 
+  </div>	
+</nav>
+</section>
+</header>
+	
+	
+	
+	
+	
+	
+<body>
+	<!-------About popup form(after click)------->
+<div id="aboutbtn" class="modal">
+  <form class="modal-content animate">
+    <div class="container">
+      <h1>About</h1>
+      <p>Hello</p>
+	</div>
+  </form>
+</div>	
+	
+	
+	
+	<!-----contact popup form (after click)------->
+<div id="contbtn" class="modal">
+  <form class="modal-content animate">
+    <div class="container">
+      <h1>Contact</h1>
+      <input type="text" placeholder="Name" name="uname" required>
+	  <input type="text" placeholder="Email" name="mail" required>
+		<p></p>
+	  <textarea type="text" placeholder="Message" required></textarea>
+	  <button type="submit" class="btn">Send</button>
+      	<p></p>
+	</div>
+  </form>
+</div>
+		
+	
+	
+	
+	<!--------popup script--------> 
+<script>
+// Get the modal about popupform
+var modal = document.getElementById('aboutbtn');
+var modal = document.getElementById('contbtn');
+</script>
+
+
+<script>
+// When the user clicks anywhere outside of the modal, close it
+	window.onclick = function(event) {
+  if (event.target == aboutbtn) {
+      aboutbtn.style.display = "none";
+  }
+
+    if (event.target == contbtn) {
+        contbtn.style.display = "none";
+    }
+}
+</script>
+
+	
+	
+</body>
+</html>

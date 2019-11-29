@@ -1,0 +1,90 @@
+@charset "utf-8";
+* {
+  box-sizing: border-box;
+}
+
+/* Create four equal columns that floats next to each other */
+.column {
+  float: left;
+  width: 50%;
+  padding: 10px;
+  height: 40em;
+}
+
+.columnfooter{
+  background-color: #D38385;
+  margin-top: 2px;
+  height: 50px;
+}
+
+/* Clear floats after the columns */
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Responsive layout - makes a two column-layout instead of four columns */
+@media screen and (max-width: 900px) {
+  .column  {
+    width: 50%;
+  }
+}
+
+/* Responsive layout - makes the two columns stack on top of each other instead of next to each other */
+@media screen and (max-width: 600px) {
+  .column  {
+    width: 100%;
+  }
+}
+
+/* --------------------------------------------------- */
+/* 添加調整處 */
+/* --------------------------------------------------- */
+
+.header {
+  font-size: 30px;
+  text-align: right;
+}
+
+/* 調整右邊聊天區域大小 */
+.el-table {
+  max-height: 500px;
+}
+
+/* 每則聊天訊息間沒有邊框 */
+td {
+  border: none !important;
+}
+/* 滑鼠移到聊天訊息改變的顏色 */
+td:hover {
+  background: #FFFFFF !important;
+}
+
+/* 調整vedio大小 */
+.vedio{
+  height: 350px;
+}
+
+
+
+/* 調整指定區域(以el-row的class標籤名稱區分區域)的位置 */
+/* .vediobox{
+  top:50px;
+} */
+
+.itembox{
+  top:50px;
+}
+
+.bidfeaturebox{
+  top:5px;
+}
+
+.chooseitembox{
+  top:30px;
+}
+
+.timebtnbox{
+  top:30px;
+}

@@ -1,0 +1,11 @@
+{
+ "user_latest_id": 3,
+ "item_latest_id": 27,
+ "order_latest_id": 45,
+ "sms_account": "",
+ "sms_password": "",
+ "jwt_secret": "renewBB_secret",
+ "phone_secret": "giveMeSomeWeed",
+ "ecpay_hash_key": "5294y06JbISpM5x9",
+ "ecpay_hash_iv": "v77hoKGq4kWxNNIS"
+}

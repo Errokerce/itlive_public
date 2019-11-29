@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>註冊</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+TC&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link href="/static/css/regIsSeller.css" rel="stylesheet" type="text/css">
+    <link href="css/choice.css" rel="stylesheet" type="text/css">
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+
+    <h1>選擇身份</h1>
+    <div id="app">
+        <div class="container">
+            <p v-if="!isSeller"><b>您是一位 . . . ?</b></p>
+            <p v-if="isSeller"><a href="https://www.youtube.com/account_advanced" target="_blank"><b>您可以在此找到找到您的頻道ID</b></a></p>
+            <div v-if="!isSeller" class="btnbox">
+                <button class="btnBig" @click="post()">買家</button>
+				<button class="btnBig" @click="isSeller=true">賣家
+				</button>
+            </div>
+            <div v-if="isSeller">
+                <span style="background-color: #fff;color: #222;">https://www.Youtube.com/channel/</span> <input v-model:value="chanUrl" placeholder="您的Youtube網址"><br><br>
+               <span style="background-color: #fff;color: #222;">https://www.iTLive.nctu.me/channel/</span> <input v-model:value="customUrl" placeholder="您在iTlive的自訂網址"><br>
+                <button class="btnBig" @click="post()">確認</button>
+            </div>
+			<hr>
+        </div>
+    </div>
+	
+	
+    <script>
+            const service = axios.create()
+        const app = new Vue({
+            delimiters: ['&{', '}'],
+            el: '#app',
+            data(){
+                return {
+                    isSeller:false,
+                    chanUrl:"",
+                    customUrl:"",
+                }
+                
+            },
+            methods: {
+                post(){
+                    console.log(this.customUrl)
+                    let postData={
+                            is_seller: this.isSeller
+                        }
+                    if(this.isSeller){
+                        // if(this.chanUrl.startsWith("https://www.youtube.com/channel/")){
+                            postData.custom_url=this.customUrl
+                            postData.channel_id=this.chanUrl
+                        // }
+                        // else{
+                            //spam
+                            // return
+                        // }
+                    }
+                    console.log(postData)
+                    service({
+                            url: 'https://api.itlive.nctu.me/login/register/isSeller',
+                            method: 'POST',
+                            data: postData,
+                            withCredentials: true
+                        }).then(resp=>{
+                            console.log(resp)
+                            if(resp.data.state=="ok"){
+                                window.location.href="/regProfile"
+                            }
+                    })
+                    
+                }
+            }
+        })
+    </script>
+
+</body>
+
+</html>
